@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 rootProject.name = "mpv-android-support"
 include(":app")
 include(":mpv-view")
+include(":native-libs")

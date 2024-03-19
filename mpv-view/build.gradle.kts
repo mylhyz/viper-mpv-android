@@ -15,6 +15,7 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags += ""
+                arguments += "-DDEPS_DIR=${projectDir}/build/deps/"
             }
         }
     }
@@ -43,12 +44,39 @@ android {
     }
 }
 
+val extractNativeLibs = configurations.create("extractNativeLibs")
+
 dependencies {
 
 //    implementation(libs.androidx.core.ktx)
 //    implementation(libs.androidx.appcompat)
 //    implementation(libs.material)
+
+    extractNativeLibs("com.viper.android.mpv:native-libs:0.0.1-SNAPSHOT")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
+
+tasks.register("extractNativeLibs") {
+    doLast {
+        configurations["extractNativeLibs"].files.forEach {
+            val file = it.absoluteFile
+            var pkgName = file.name.split("-")[0]
+            if (file.name.startsWith("native-libs")) {
+                pkgName = "native-libs"
+            }
+            copy {
+                from(zipTree(file))
+                into("$projectDir/build/deps/$pkgName/")
+                include("arm64-v8a/**")
+                include("armeabi-v7a/**")
+                include("x86/**")
+                include("x86_64/**")
+            }
+        }
+    }
+}
+
+tasks["preBuild"].dependsOn(tasks["extractNativeLibs"])

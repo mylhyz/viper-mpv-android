@@ -22,10 +22,17 @@ publishing {
 
 publishing {
     repositories {
+//        maven {
+//            val releasesRepoUrl = layout.buildDirectory.dir("repos/releases")
+//            val snapshotsRepoUrl = layout.buildDirectory.dir("repos/snapshots")
+//            url = uri(if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl)
+//        }
         maven {
-            val releasesRepoUrl = layout.buildDirectory.dir("repos/releases")
-            val snapshotsRepoUrl = layout.buildDirectory.dir("repos/snapshots")
-            url = uri(if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl)
+            url = uri("https://maven.pkg.github.com/mylhyz/mpv-android-support")
+            credentials {
+                username = System.getenv("GITHUB_USERNAME")
+                password = System.getenv("GITHUB_TOKEN")
+            }
         }
     }
 }

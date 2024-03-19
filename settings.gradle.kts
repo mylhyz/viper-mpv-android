@@ -16,6 +16,16 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+//        maven {
+//            url = uri("/Users/mylhyz/github/mpv-android-support/native-libs/build/repos/releases")
+//        }
+        maven {
+            url = uri("https://maven.pkg.github.com/mylhyz/mpv-android-support")
+            credentials {
+                username = System.getenv("GITHUB_USERNAME")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
     }
 }
 

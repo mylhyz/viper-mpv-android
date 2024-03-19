@@ -6,7 +6,7 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import io.viper.android.mpv.NativeLibrary
 
-class AndroidSurfaceView(context: Context, attrs: AttributeSet? = null) :
+class AndroidSurfaceView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
     SurfaceView(context, attrs),
     SurfaceHolder.Callback {
 

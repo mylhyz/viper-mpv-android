@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">v-mpv</string>
+    <string name="label_share_intent">Play in v-mpv</string>
 </resources>

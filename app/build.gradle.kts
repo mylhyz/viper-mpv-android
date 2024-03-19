@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    namespace = "io.viper.android.mpv.demo"
+    namespace = "io.viper.android.mpv.player"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "io.viper.android.mpv.demo"
-        minSdk = 19
+        applicationId = "io.viper.android.mpv.player"
+        minSdk = 21
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"

@@ -1,4 +1,4 @@
-package io.viper.android.mpv.demo
+package io.viper.android.mpv.player
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge

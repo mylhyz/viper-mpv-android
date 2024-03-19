@@ -29,7 +29,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "mpv-android-support"
+rootProject.name = "viper-mpv-android"
 include(":app")
 include(":mpv-view")
 include(":native-libs")

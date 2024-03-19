@@ -18,7 +18,7 @@ set_target_properties(swresample PROPERTIES IMPORTED_LOCATION ${DEPS_DIR}/native
 add_library(swscale SHARED IMPORTED )
 set_target_properties(swscale PROPERTIES IMPORTED_LOCATION ${DEPS_DIR}/native-libs/${ANDROID_ABI}/lib/libswscale.so)
 
-add_library(player SHARED
+add_library(mpvjni SHARED
         main.cpp
         property.cpp
         render.cpp
@@ -27,5 +27,5 @@ add_library(player SHARED
         jni_utils.cpp
         event.cpp
 )
-target_include_directories(player PRIVATE ${DEPS_DIR}/native-libs/${ANDROID_ABI}/include/)
-target_link_libraries(player android log mpv avcodec avdevice avfilter avutil swresample swscale)
+target_include_directories(mpvjni PRIVATE ${DEPS_DIR}/native-libs/${ANDROID_ABI}/include/)
+target_link_libraries(mpvjni android log mpv avcodec avdevice avfilter avutil swresample swscale)

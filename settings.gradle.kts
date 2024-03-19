@@ -32,4 +32,5 @@ dependencyResolutionManagement {
 rootProject.name = "viper-mpv-android"
 include(":app")
 include(":mpv-view")
-include(":native-libs")
+// 如果需要上传依赖库，可以将下面的库加回来
+// include(":native-libs")

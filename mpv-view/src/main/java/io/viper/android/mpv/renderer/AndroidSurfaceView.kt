@@ -4,14 +4,15 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import io.viper.android.mpv.IPlayer
 import io.viper.android.mpv.NativeLibrary
 
 class AndroidSurfaceView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
     SurfaceView(context, attrs),
-    SurfaceHolder.Callback {
+    SurfaceHolder.Callback, IPlayer {
 
-    var filePath: String? = null
-    var voInUse: String = ""
+    private var filePath: String? = null
+    private var voInUse: String = ""
 
     override fun surfaceCreated(holder: SurfaceHolder) {
         NativeLibrary.attachSurface(holder.surface)
@@ -34,6 +35,11 @@ class AndroidSurfaceView @JvmOverloads constructor(context: Context, attrs: Attr
         NativeLibrary.setPropertyString("vo", "null")
         NativeLibrary.setOptionString("force-window", "no")
         NativeLibrary.detachSurface()
+    }
+
+
+    override fun playFile(fp: String) {
+        this.filePath = fp
     }
 
 

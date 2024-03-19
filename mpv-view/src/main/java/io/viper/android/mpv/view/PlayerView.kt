@@ -3,6 +3,8 @@ package io.viper.android.mpv.view
 import android.content.Context
 import android.util.AttributeSet
 import android.widget.FrameLayout
+import io.viper.android.mpv.IPlayer
+import io.viper.android.mpv.IPlayerDelegate
 import io.viper.android.mpv.renderer.AndroidSurfaceView
 
 class PlayerView @JvmOverloads constructor(
@@ -10,12 +12,22 @@ class PlayerView @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) :
-    FrameLayout(content, attrs, defStyleAttr) {
+    FrameLayout(content, attrs, defStyleAttr), IPlayerDelegate {
+
+    private var mOrigin: IPlayer? = null
 
     init {
+        mOrigin = AndroidSurfaceView(content, attrs)
         addView(
-            AndroidSurfaceView(content, attrs),
+            mOrigin as AndroidSurfaceView,
             LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         )
+    }
+
+
+    override fun playFile(fp: String) {
+        mOrigin?.apply {
+            playFile(fp)
+        }
     }
 }

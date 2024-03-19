@@ -1,6 +1,7 @@
-# mpv android support
+# viper mpv android
 
-Embed mpv into android component
+- Embed mpv into android component
+- User interface optimization
 
 
 ## Thanks

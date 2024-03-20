@@ -23,7 +23,8 @@
         </activity>
         <activity
             android:name=".PlayerActivity"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/Theme.MPV.NoActionBar">
             <intent-filter> <!-- Media protocols -->
                 <action android:name="android.intent.action.VIEW" />
 

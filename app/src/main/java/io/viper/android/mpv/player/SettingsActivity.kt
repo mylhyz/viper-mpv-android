@@ -3,13 +3,13 @@ package io.viper.android.mpv.player
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 
-class MainActivity : AppCompatActivity(R.layout.activity_frag_container) {
+class SettingsActivity : AppCompatActivity(R.layout.activity_frag_container) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         with(supportFragmentManager.beginTransaction()) {
-            add(R.id.fragment_container_view, MainFragment())
+            add(R.id.fragment_container_view, SettingsFragment())
             commit()
         }
     }

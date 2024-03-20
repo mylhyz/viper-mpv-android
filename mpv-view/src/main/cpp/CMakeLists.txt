@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.22.1)
 
 project("mpv-view")
 
+#set(CMAKE_CXX_STANDARD 17)
+#set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#set(CMAKE_CXX_EXTENSIONS OFF)
+
 add_library(mpv SHARED IMPORTED )
 set_target_properties(mpv PROPERTIES IMPORTED_LOCATION ${DEPS_DIR}/native-libs/${ANDROID_ABI}/lib/libmpv.so)
 

@@ -7,6 +7,8 @@ android {
     namespace = "io.viper.android.mpv.view"
     compileSdk = 34
 
+    ndkVersion = "26.2.11394342"
+
     defaultConfig {
         minSdk = 21
 
@@ -15,7 +17,9 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags += ""
-                arguments += arrayOf("-DANDROID_STL=c++_shared","-DDEPS_DIR=${projectDir}/build/deps/")
+                arguments += arrayOf(
+                    "-DANDROID_STL=c++_shared", "-DDEPS_DIR=${projectDir}/build/deps/"
+                )
             }
         }
     }
@@ -24,8 +28,7 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             )
         }
     }

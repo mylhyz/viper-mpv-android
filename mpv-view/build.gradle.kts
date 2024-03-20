@@ -15,7 +15,7 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags += ""
-                arguments += "-DDEPS_DIR=${projectDir}/build/deps/"
+                arguments += arrayOf("-DANDROID_STL=c++_shared","-DDEPS_DIR=${projectDir}/build/deps/")
             }
         }
     }

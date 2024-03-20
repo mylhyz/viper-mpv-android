@@ -24,6 +24,11 @@ class PlayerView @JvmOverloads constructor(
         )
     }
 
+    override fun init(configDir: String, cacheDir: String) {
+        mOrigin?.apply {
+            init(configDir, cacheDir)
+        }
+    }
 
     override fun playFile(fp: String) {
         mOrigin?.apply {

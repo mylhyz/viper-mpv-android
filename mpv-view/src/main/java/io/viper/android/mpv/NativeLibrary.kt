@@ -8,6 +8,7 @@ class NativeLibrary {
 
     companion object {
         init {
+            System.loadLibrary("avformat")
             System.loadLibrary("mpvjni")
         }
 

@@ -48,6 +48,7 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         // player
+        mPlayerDelegate.init(applicationContext.filesDir.path, applicationContext.cacheDir.path)
         mPlayerDelegate.playFile(filepath)
     }
 

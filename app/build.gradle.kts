@@ -43,6 +43,7 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.media)
+    implementation(libs.androidx.preference.ktx)
 
     implementation(project(":mpv-view"))
 

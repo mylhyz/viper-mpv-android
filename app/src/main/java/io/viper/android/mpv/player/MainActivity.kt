@@ -3,21 +3,35 @@ package io.viper.android.mpv.player
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.fragment.app.Fragment
 
 class MainActivity : AppCompatActivity(R.layout.activity_main) {
+
+    private val mainScreenFragment: Fragment by lazy {
+        MainScreenFragment()
+    }
+    private val settingsFragment: Fragment by lazy {
+        SettingsFragment()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+        switchFragment(NavigationPath.MAIN)
+    }
 
+    fun switchFragment(path: NavigationPath) {
+        val targetFragment = when (path) {
+            NavigationPath.MAIN -> mainScreenFragment
+            NavigationPath.SETTINGS -> settingsFragment
+        }
+        val fragment = supportFragmentManager.findFragmentById(R.id.fragment_main_container_view)
         with(supportFragmentManager.beginTransaction()) {
-            add(R.id.fragment_main_container_view, MainScreenFragment())
+            if (fragment == null) {
+                add(R.id.fragment_main_container_view, targetFragment)
+            } else if (targetFragment != fragment) {
+                replace(R.id.fragment_main_container_view, targetFragment)
+            }
             commit()
         }
     }

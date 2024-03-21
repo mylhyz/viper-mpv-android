@@ -1,13 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.preference.PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <SwitchPreferenceCompat
-        app:key="notifications"
-        app:title="Enable message notifications" />
+    <Preference
+        app:fragment="io.viper.android.mpv.player.SettingsFragment$GeneralPreferenceFragment"
+        app:title="@string/pref_header_general" />
 
     <Preference
-        app:key="feedback"
-        app:summary="Report technical issues or suggest new features"
-        app:title="Send feedback" />
+        app:fragment="io.viper.android.mpv.player.SettingsFragment$VideoPreferenceFragment"
+        app:title="@string/pref_header_video" />
+
+    <Preference
+        app:fragment="io.viper.android.mpv.player.SettingsFragment$UIPreferenceFragment"
+        app:title="@string/pref_header_ui" />
+
+    <Preference
+        app:fragment="io.viper.android.mpv.player.SettingsFragment$GesturesPreferenceFragment"
+        app:title="@string/pref_header_gestures" />
+
+    <Preference
+        app:fragment="io.viper.android.mpv.player.SettingsFragment$DeveloperPreferenceFragment"
+        app:title="@string/pref_header_developer" />
+
+    <Preference
+        app:fragment="io.viper.android.mpv.player.SettingsFragment$AdvancedPreferenceFragment"
+        app:title="@string/pref_header_advanced" />
 
 </androidx.preference.PreferenceScreen>

@@ -27,7 +27,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:drawableTop="@drawable/ic_file_open_white_48dp"
+            android:drawableLeft="@drawable/ic_file_open_white_48dp"
             android:text="@string/action_open_doc_tree"
             android:textColor="@android:color/primary_text_dark" />
 
@@ -45,7 +45,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:drawableTop="@drawable/ic_link_white_48dp"
+                android:drawableLeft="@drawable/ic_link_white_48dp"
                 android:text="@string/action_open_url"
                 android:textColor="@android:color/primary_text_dark" />
 
@@ -55,7 +55,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:drawableTop="@drawable/ic_settings_white_48dp"
+                android:drawableLeft="@drawable/ic_settings_white_48dp"
                 android:text="@string/action_settings"
                 android:textColor="@android:color/primary_text_dark" />
 

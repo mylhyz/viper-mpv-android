@@ -51,9 +51,9 @@ val extractNativeLibs = configurations.create("extractNativeLibs")
 
 dependencies {
 
-//    implementation(libs.androidx.core.ktx)
-//    implementation(libs.androidx.appcompat)
-//    implementation(libs.material)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
 
     extractNativeLibs("com.viper.android.mpv:native-libs:0.0.1-SNAPSHOT")
 

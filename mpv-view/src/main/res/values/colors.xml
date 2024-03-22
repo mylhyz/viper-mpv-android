@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="tint_normal">#ffffff</color>
+    <color name="tint_disabled">#3c3c3c</color>
+
+    <color name="tint_seekbar_bg">#8A8A8A</color>
+
+</resources>

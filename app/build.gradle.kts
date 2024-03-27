@@ -45,6 +45,8 @@ dependencies {
     implementation(libs.androidx.media)
     implementation(libs.androidx.preference.ktx)
 
+    implementation("com.nononsenseapps:filepicker:4.3.0-beta.2")
+
     implementation(project(":mpv-view"))
 
     testImplementation(libs.junit)

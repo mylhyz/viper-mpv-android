@@ -27,6 +27,9 @@
             android:label="@string/title_activity_settings"
             android:parentActivityName=".MainActivity" />
         <activity
+            android:name="com.nononsenseapps.filepicker.doc.DocumentPickerActivity"
+            android:theme="@style/Theme.MPV.FilePickerTheme" />
+        <activity
             android:name=".PlayerActivity"
             android:exported="true"
             android:theme="@style/Theme.MPV.NoActionBar">

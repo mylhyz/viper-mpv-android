@@ -9,11 +9,14 @@ import android.widget.Button
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import com.nononsenseapps.filepicker.doc.DocumentPickerActivity
 
 class MainFragment : Fragment(R.layout.fragment_main) {
 
     private lateinit var mDocumentTreeChooser: ActivityResultLauncher<Uri?> // 不能优化成 by lazy
+    private lateinit var mDocumentChooser: ActivityResultLauncher<Array<String>> // 不能优化成 by lazy
     private lateinit var mPlayerLauncher: ActivityResultLauncher<Intent>
+    private lateinit var mDocumentPickerLauncher: ActivityResultLauncher<Intent>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,7 +26,22 @@ class MainFragment : Fragment(R.layout.fragment_main) {
                     requireContext().contentResolver.takePersistableUriPermission(
                         root, Intent.FLAG_GRANT_READ_URI_PERMISSION
                     )
-                    // TODO 打开文件夹
+
+                    val intent = Intent(activity, DocumentPickerActivity::class.java)
+                    intent.putExtra(DocumentPickerActivity.EXTRA_START_PATH, root.toString())
+                    intent.putExtra(DocumentPickerActivity.EXTRA_SINGLE_CLICK, true)
+                    mDocumentPickerLauncher.launch(intent)
+                }
+            }
+        mDocumentChooser = registerForActivityResult(ActivityResultContracts.OpenDocument()) {
+            it?.let { documentUri ->
+                playFile(documentUri.toString())
+            }
+        }
+        mDocumentPickerLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+                it.data?.data?.let { documentUri ->
+                    playFile(documentUri.toString())
                 }
             }
         mPlayerLauncher =
@@ -36,9 +54,16 @@ class MainFragment : Fragment(R.layout.fragment_main) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        view.findViewById<Button>(R.id.docBtn).setOnClickListener {
+        view.findViewById<Button>(R.id.docTreeBtn).setOnClickListener {
             try {
                 mDocumentTreeChooser.launch(null)
+            } catch (e: ActivityNotFoundException) {
+                it.isEnabled = false
+            }
+        }
+        view.findViewById<Button>(R.id.fileBtn).setOnClickListener {
+            try {
+                mDocumentChooser.launch(arrayOf("*/*"))
             } catch (e: ActivityNotFoundException) {
                 it.isEnabled = false
             }

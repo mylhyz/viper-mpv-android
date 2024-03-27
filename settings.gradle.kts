@@ -20,7 +20,14 @@ dependencyResolutionManagement {
 //            url = uri("/Users/mylhyz/github/mpv-android-support/native-libs/build/repos/releases")
 //        }
         maven {
-            url = uri("https://maven.pkg.github.com/mylhyz/mpv-android-support")
+            url = uri("https://maven.pkg.github.com/mylhyz/viper-mpv-android")
+            credentials {
+                username = System.getenv("GITHUB_USERNAME")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+        maven {
+            url = uri("https://maven.pkg.github.com/mylhyz/viper-android-utils")
             credentials {
                 username = System.getenv("GITHUB_USERNAME")
                 password = System.getenv("GITHUB_TOKEN")

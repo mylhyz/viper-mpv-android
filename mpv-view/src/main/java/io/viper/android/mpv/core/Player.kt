@@ -1,26 +1,29 @@
-package io.viper.android.mpv.renderer
+package io.viper.android.mpv.core
 
 import android.content.Context
 import android.os.Build
 import android.os.Environment
 import android.preference.PreferenceManager
-import android.util.AttributeSet
 import android.util.Log
 import android.view.SurfaceHolder
-import android.view.SurfaceView
 import android.view.WindowManager
-import io.viper.android.mpv.IPlayer
 import io.viper.android.mpv.NativeLibrary
 import io.viper.android.mpv.view.R
 
-class AndroidSurfaceView @JvmOverloads constructor(context: Context, attrs: AttributeSet? = null) :
-    SurfaceView(context, attrs),
-    SurfaceHolder.Callback, IPlayer {
+class Player {
 
     private var filePath: String? = null
     private var voInUse: String = ""
 
-    override fun surfaceCreated(holder: SurfaceHolder) {
+
+    // 暴露给外部
+    var vid: Int by TrackDelegate("vid")
+
+
+    val videoAspect: Double?
+        get() = NativeLibrary.getPropertyDouble("video-params/aspect")
+
+    fun surfaceCreated(holder: SurfaceHolder) {
         NativeLibrary.attachSurface(holder.surface)
         // This forces mpv to render subs/osd/whatever into our surface even if it would ordinarily not
         NativeLibrary.setOptionString("force-window", "yes")
@@ -33,25 +36,31 @@ class AndroidSurfaceView @JvmOverloads constructor(context: Context, attrs: Attr
         }
     }
 
-    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+    fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
         NativeLibrary.setPropertyString("android-surface-size", "${width}x$height")
     }
 
-    override fun surfaceDestroyed(holder: SurfaceHolder) {
+    fun surfaceDestroyed(holder: SurfaceHolder) {
         NativeLibrary.setPropertyString("vo", "null")
         NativeLibrary.setOptionString("force-window", "no")
         NativeLibrary.detachSurface()
     }
 
-    override fun init(configDir: String, cacheDir: String) {
-        NativeLibrary.create(this.context)
+    fun init(
+        context: Context,
+        configDir: String,
+        cacheDir: String,
+        holder: SurfaceHolder,
+        callback: SurfaceHolder.Callback
+    ) {
+        NativeLibrary.create(context)
         NativeLibrary.setOptionString("config", "yes")
         NativeLibrary.setOptionString("config-dir", configDir)
-        for (opt in arrayOf("gpu-shader-cache-dir", "icc-cache-dir"))
-            NativeLibrary.setOptionString(opt, cacheDir)
-        initOptions() // do this before init() so user-supplied config can override our choices
-        NativeLibrary.init()
-        /* Hardcoded options: */
+        for (opt in arrayOf("gpu-shader-cache-dir", "icc-cache-dir")) NativeLibrary.setOptionString(
+            opt, cacheDir
+        )
+        initOptions(context) // do this before init() so user-supplied config can override our choices
+        NativeLibrary.init()/* Hardcoded options: */
         // we need to call write-watch-later manually
         NativeLibrary.setOptionString("save-position-on-quit", "no")
         // would crash before the surface is attached
@@ -59,31 +68,27 @@ class AndroidSurfaceView @JvmOverloads constructor(context: Context, attrs: Attr
         // "no" wouldn't work and "yes" is not intended by the UI
         NativeLibrary.setOptionString("idle", "once")
 
-        holder.addCallback(this)
+        holder.addCallback(callback)
     }
 
-    override fun playFile(fp: String) {
-        this.filePath = fp
+    fun playFile(fp: String) {
+        filePath = fp
     }
 
-    private fun initOptions() {
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this.context)
+    private fun initOptions(context: Context) {
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
 
         // apply phone-optimized defaults
         NativeLibrary.setOptionString("profile", "fast")
 
         // vo
-        val vo = if (sharedPreferences.getBoolean("gpu_next", false))
-            "gpu-next"
-        else
-            "gpu"
+        val vo = if (sharedPreferences.getBoolean("gpu_next", false)) "gpu-next"
+        else "gpu"
         voInUse = vo
 
         // hwdec
-        val hwdec = if (sharedPreferences.getBoolean("hardware_decoding", true))
-            "auto"
-        else
-            "no"
+        val hwdec = if (sharedPreferences.getBoolean("hardware_decoding", true)) "auto"
+        else "no"
 
         // vo: set display fps as reported by android
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -94,8 +99,10 @@ class AndroidSurfaceView @JvmOverloads constructor(context: Context, attrs: Attr
             Log.v(TAG, "Display ${disp.displayId} reports FPS of $refreshRate")
             NativeLibrary.setOptionString("display-fps-override", refreshRate.toString())
         } else {
-            Log.v(TAG, "Android version too old, disabling refresh rate functionality " +
-                    "(${Build.VERSION.SDK_INT} < ${Build.VERSION_CODES.M})")
+            Log.v(
+                TAG,
+                "Android version too old, disabling refresh rate functionality " + "(${Build.VERSION.SDK_INT} < ${Build.VERSION_CODES.M})"
+            )
         }
 
         // set non-complex options
@@ -121,8 +128,7 @@ class AndroidSurfaceView @JvmOverloads constructor(context: Context, attrs: Attr
 
         for ((preference_name, mpv_option) in opts) {
             val preference = sharedPreferences.getString(preference_name, "")
-            if (!preference.isNullOrBlank())
-                NativeLibrary.setOptionString(mpv_option, preference)
+            if (!preference.isNullOrBlank()) NativeLibrary.setOptionString(mpv_option, preference)
         }
 
         // set more options
@@ -135,14 +141,21 @@ class AndroidSurfaceView @JvmOverloads constructor(context: Context, attrs: Attr
             NativeLibrary.setOptionString("deband", "yes")
         }
 
-        val vidsync = sharedPreferences.getString("video_sync", resources.getString(R.string.pref_video_interpolation_sync_default))
+        val vidsync = sharedPreferences.getString(
+            "video_sync",
+            context.resources.getString(R.string.pref_video_interpolation_sync_default)
+        )
         NativeLibrary.setOptionString("video-sync", vidsync!!)
 
-        if (sharedPreferences.getBoolean("video_interpolation", false))
-            NativeLibrary.setOptionString("interpolation", "yes")
+        if (sharedPreferences.getBoolean(
+                "video_interpolation", false
+            )
+        ) NativeLibrary.setOptionString("interpolation", "yes")
 
-        if (sharedPreferences.getBoolean("gpudebug", false))
-            NativeLibrary.setOptionString("gpu-debug", "yes")
+        if (sharedPreferences.getBoolean(
+                "gpudebug", false
+            )
+        ) NativeLibrary.setOptionString("gpu-debug", "yes")
 
         if (sharedPreferences.getBoolean("video_fastdecode", false)) {
             NativeLibrary.setOptionString("vd-lavc-fast", "yes")
@@ -156,20 +169,20 @@ class AndroidSurfaceView @JvmOverloads constructor(context: Context, attrs: Attr
         NativeLibrary.setOptionString("hwdec-codecs", "h264,hevc,mpeg4,mpeg2video,vp8,vp9,av1")
         NativeLibrary.setOptionString("ao", "audiotrack,opensles")
         NativeLibrary.setOptionString("tls-verify", "yes")
-        NativeLibrary.setOptionString("tls-ca-file", "${this.context.filesDir.path}/cacert.pem")
+        NativeLibrary.setOptionString("tls-ca-file", "${context.filesDir.path}/cacert.pem")
         NativeLibrary.setOptionString("input-default-bindings", "yes")
         // Limit demuxer cache since the defaults are too high for mobile devices
         val cacheMegs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) 64 else 32
         NativeLibrary.setOptionString("demuxer-max-bytes", "${cacheMegs * 1024 * 1024}")
         NativeLibrary.setOptionString("demuxer-max-back-bytes", "${cacheMegs * 1024 * 1024}")
         //
-        val screenshotDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+        val screenshotDir =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
         screenshotDir.mkdirs()
         NativeLibrary.setOptionString("screenshot-directory", screenshotDir.path)
     }
 
-
     companion object {
-        private const val TAG = "AndroidSurfaceView"
+        const val TAG = "MPV-Player"
     }
 }

@@ -1,6 +1,7 @@
 package io.viper.android.mpv.player
 
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
 import android.os.ParcelFileDescriptor
@@ -11,16 +12,22 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import io.viper.android.mpv.IPlayerDelegate
+import io.viper.android.mpv.core.Player
+import io.viper.android.mpv.view.PlayerView
 
 class PlayerActivity : AppCompatActivity() {
 
     private val onLoadCommands = mutableListOf<Array<String>>()
     private var mToast: Toast? = null
     private val psc = PlaybackStateCache()
-    private val mPlayerDelegate: IPlayerDelegate by lazy {
+    private val mPlayerView: PlayerView by lazy {
         findViewById(R.id.player_view)
     }
+    private val mPlayer: Player by lazy {
+        mPlayerView.getAsPlayer()
+    }
+
+    private var autoRotationMode = "auto"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,6 +40,7 @@ class PlayerActivity : AppCompatActivity() {
         // UI
         setContentView(R.layout.activity_player)
         initMessageToast()
+        updateOrientation(true)
 
         // data
         val filepath = parsePathFromIntent(intent)
@@ -46,9 +54,12 @@ class PlayerActivity : AppCompatActivity() {
             return
         }
 
-        // player
-        mPlayerDelegate.init(applicationContext.filesDir.path, applicationContext.cacheDir.path)
-        mPlayerDelegate.playFile(filepath)
+        // attach to player
+        mPlayerView.attachToPlayer(
+            applicationContext.filesDir.path,
+            applicationContext.cacheDir.path
+        )
+        mPlayer.playFile(filepath)
     }
 
     // Intent/Uri parsing
@@ -160,11 +171,36 @@ class PlayerActivity : AppCompatActivity() {
         finish()
     }
 
+    private fun updateOrientation(initial: Boolean = false) {
+        if (autoRotationMode != "auto") {
+            if (!initial) return // don't reset at runtime
+            requestedOrientation = when (autoRotationMode) {
+                "landscape" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                "portrait" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+                else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            }
+        }
+        if (initial || mPlayer.vid == -1) return
+
+        val ratio = mPlayer.videoAspect?.toFloat() ?: 0f
+        Log.v(TAG, "auto rotation: aspect ratio = $ratio")
+
+        if (ratio == 0f || ratio in (1f / ASPECT_RATIO_MIN)..ASPECT_RATIO_MIN) {
+            // video is square, let Android do what it wants
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            return
+        }
+        requestedOrientation = if (ratio > 1f) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        else ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+    }
+
 
     companion object {
         private const val TAG = "PlayerActivity"
 
+        private const val ASPECT_RATIO_MIN = 1.2f // covers 5:4 and up
+
         // action of result intent
-        private const val RESULT_INTENT = "is.xyz.mpv.MPVActivity.result"
+        private const val RESULT_INTENT = "io.viper.android.mpv.player.PlayerActivity.result"
     }
 }

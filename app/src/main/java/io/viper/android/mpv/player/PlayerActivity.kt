@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import io.viper.android.mpv.core.Player
+import io.viper.android.mpv.hud.HudContainer
 import io.viper.android.mpv.view.PlayerView
 
 class PlayerActivity : AppCompatActivity() {
@@ -22,6 +23,9 @@ class PlayerActivity : AppCompatActivity() {
     private val psc = PlaybackStateCache()
     private val mPlayerView: PlayerView by lazy {
         findViewById(R.id.player_view)
+    }
+    private val mHudContainer: HudContainer by lazy {
+        findViewById(R.id.hud_view)
     }
     private val mPlayer: Player by lazy {
         mPlayerView.getAsPlayer()
@@ -59,6 +63,7 @@ class PlayerActivity : AppCompatActivity() {
             applicationContext.filesDir.path,
             applicationContext.cacheDir.path
         )
+        mHudContainer.attachToPlayer(mPlayer)
         mPlayer.playFile(filepath)
     }
 

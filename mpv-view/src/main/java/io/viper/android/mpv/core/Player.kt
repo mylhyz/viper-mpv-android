@@ -18,10 +18,31 @@ class Player {
 
     // 暴露给外部
     var vid: Int by TrackDelegate("vid")
+    var sid: Int by TrackDelegate("sid")
+    var secondarySid: Int by TrackDelegate("secondary-sid")
+    var aid: Int by TrackDelegate("aid")
 
+    data class Track(val mpvId: Int, val name: String)
+    var tracks = mapOf<String, MutableList<Track>>(
+        "audio" to arrayListOf(),
+        "video" to arrayListOf(),
+        "sub" to arrayListOf())
+
+
+    fun cycleAudio() = NativeLibrary.command(arrayOf("cycle", "audio"))
+    fun cycleSub() = NativeLibrary.command(arrayOf("cycle", "sub"))
+    fun cyclePause() = NativeLibrary.command(arrayOf("cycle", "pause"))
+    fun cycleHwdec() = NativeLibrary.command(arrayOf("cycle-values", "hwdec", "auto", "no"))
 
     val videoAspect: Double?
         get() = NativeLibrary.getPropertyDouble("video-params/aspect")
+
+    var playbackSpeed: Double?
+        get() = NativeLibrary.getPropertyDouble("speed")
+        set(speed) = NativeLibrary.setPropertyDouble("speed", speed!!)
+
+    val hwdecActive: String
+        get() = NativeLibrary.getPropertyString("hwdec-current") ?: "no"
 
     fun surfaceCreated(holder: SurfaceHolder) {
         NativeLibrary.attachSurface(holder.surface)

@@ -6,6 +6,7 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.widget.FrameLayout
 import androidx.appcompat.app.AlertDialog
+import io.viper.android.mpv.IPlayerHandler
 import io.viper.android.mpv.NativeLibrary
 import io.viper.android.mpv.core.Player
 import io.viper.android.mpv.getString
@@ -21,7 +22,8 @@ class HudContainer @JvmOverloads constructor(
     private val mBinding: HudContainerBinding =
         HudContainerBinding.inflate(LayoutInflater.from(context), this)
 
-    private var mPlayer: Player? = null
+    var mPlayer: Player? = null
+    var mPlayerHandler: IPlayerHandler? = null
 
     init {
         initWithListener()
@@ -46,7 +48,7 @@ class HudContainer @JvmOverloads constructor(
                     ?: "???"
             "$trackPrefix $trackName"
         }
-        //TODO showToast(msg, true)
+        mPlayerHandler?.showToast(msg, true)
     }
 
     private fun initWithListener() {
@@ -70,10 +72,6 @@ class HudContainer @JvmOverloads constructor(
             nextBtn.setOnLongClickListener { openPlaylistMenu(pauseForDialog()); true }
             cycleDecoderBtn.setOnLongClickListener { pickDecoder(); true }
         }
-    }
-
-    fun attachToPlayer(player: Player) {
-        mPlayer = player
     }
 
     private fun requirePlayer(): Player {

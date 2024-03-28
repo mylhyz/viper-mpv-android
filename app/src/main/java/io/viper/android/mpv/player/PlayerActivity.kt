@@ -12,11 +12,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import io.viper.android.mpv.IPlayerHandler
 import io.viper.android.mpv.core.Player
 import io.viper.android.mpv.hud.HudContainer
 import io.viper.android.mpv.view.PlayerView
 
-class PlayerActivity : AppCompatActivity() {
+class PlayerActivity : AppCompatActivity(), IPlayerHandler {
 
     private val onLoadCommands = mutableListOf<Array<String>>()
     private var mToast: Toast? = null
@@ -63,7 +64,8 @@ class PlayerActivity : AppCompatActivity() {
             applicationContext.filesDir.path,
             applicationContext.cacheDir.path
         )
-        mHudContainer.attachToPlayer(mPlayer)
+        mHudContainer.mPlayer = mPlayer
+        mHudContainer.mPlayerHandler = this
         mPlayer.playFile(filepath)
     }
 
@@ -152,7 +154,7 @@ class PlayerActivity : AppCompatActivity() {
         mToast?.apply { setGravity(Gravity.TOP or Gravity.CENTER_HORIZONTAL, 0, 0) }
     }
 
-    private fun showToast(msg: String, cancel: Boolean = false) {
+    override fun showToast(msg: String, cancel: Boolean) {
         mToast?.apply {
             if (cancel) cancel()
             setText(msg)

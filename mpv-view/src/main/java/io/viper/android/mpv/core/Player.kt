@@ -23,10 +23,23 @@ class Player {
     var aid: Int by TrackDelegate("aid")
 
     data class Track(val mpvId: Int, val name: String)
+
     var tracks = mapOf<String, MutableList<Track>>(
-        "audio" to arrayListOf(),
-        "video" to arrayListOf(),
-        "sub" to arrayListOf())
+        "audio" to arrayListOf(), "video" to arrayListOf(), "sub" to arrayListOf()
+    )
+
+    data class PlaylistItem(val index: Int, val filename: String, val title: String?)
+
+    fun loadPlaylist(): MutableList<PlaylistItem> {
+        val playlist = mutableListOf<PlaylistItem>()
+        val count = NativeLibrary.getPropertyInt("playlist-count")!!
+        for (i in 0 until count) {
+            val filename = NativeLibrary.getPropertyString("playlist/$i/filename")!!
+            val title = NativeLibrary.getPropertyString("playlist/$i/title")
+            playlist.add(PlaylistItem(index=i, filename=filename, title=title))
+        }
+        return playlist
+    }
 
 
     fun cycleAudio() = NativeLibrary.command(arrayOf("cycle", "audio"))
@@ -36,13 +49,49 @@ class Player {
 
     val videoAspect: Double?
         get() = NativeLibrary.getPropertyDouble("video-params/aspect")
-
     var playbackSpeed: Double?
         get() = NativeLibrary.getPropertyDouble("speed")
         set(speed) = NativeLibrary.setPropertyDouble("speed", speed!!)
-
     val hwdecActive: String
         get() = NativeLibrary.getPropertyString("hwdec-current") ?: "no"
+    var paused: Boolean?
+        get() = NativeLibrary.getPropertyBoolean("pause")
+        set(paused) = NativeLibrary.setPropertyBoolean("pause", paused!!)
+
+    fun getShuffle(): Boolean {
+        return NativeLibrary.getPropertyBoolean("shuffle")!!
+    }
+
+    fun changeShuffle(cycle: Boolean, value: Boolean = true) {
+        // Use the 'shuffle' property to store the shuffled state, since changing
+        // it at runtime doesn't do anything.
+        val state = getShuffle()
+        val newState = if (cycle) state.xor(value) else value
+        if (state == newState) return
+        NativeLibrary.command(arrayOf(if (newState) "playlist-shuffle" else "playlist-unshuffle"))
+        NativeLibrary.setPropertyBoolean("shuffle", newState)
+    }
+
+    fun getRepeat(): Int {
+        return when (NativeLibrary.getPropertyString("loop-playlist") +
+                NativeLibrary.getPropertyString("loop-file")) {
+            "noinf" -> 2
+            "infno" -> 1
+            else -> 0
+        }
+    }
+
+    fun cycleRepeat() {
+        val state = getRepeat()
+        when (state) {
+            0, 1 -> {
+                NativeLibrary.setPropertyString("loop-playlist", if (state == 1) "no" else "inf")
+                NativeLibrary.setPropertyString("loop-file", if (state == 1) "inf" else "no")
+            }
+
+            2 -> NativeLibrary.setPropertyString("loop-file", "no")
+        }
+    }
 
     fun surfaceCreated(holder: SurfaceHolder) {
         NativeLibrary.attachSurface(holder.surface)

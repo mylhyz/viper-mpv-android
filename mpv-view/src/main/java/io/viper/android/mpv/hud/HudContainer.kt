@@ -1,14 +1,21 @@
 package io.viper.android.mpv.hud
 
+import android.app.Activity
 import android.content.Context
 import android.os.Build
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.widget.FrameLayout
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import io.viper.android.mpv.IPlayerHandler
 import io.viper.android.mpv.NativeLibrary
 import io.viper.android.mpv.core.Player
+import io.viper.android.mpv.dialog.IPickerDialog
+import io.viper.android.mpv.dialog.PlaylistDialog
+import io.viper.android.mpv.dialog.SpeedPickerDialog
+import io.viper.android.mpv.dialog.SubTrackDialog
 import io.viper.android.mpv.getString
 import io.viper.android.mpv.view.R
 import io.viper.android.mpv.view.databinding.HudContainerBinding
@@ -21,6 +28,8 @@ class HudContainer @JvmOverloads constructor(
 
     private val mBinding: HudContainerBinding =
         HudContainerBinding.inflate(LayoutInflater.from(context), this)
+
+    private var noUIPauseMode = ""
 
     var mPlayer: Player? = null
     var mPlayerHandler: IPlayerHandler? = null
@@ -76,6 +85,30 @@ class HudContainer @JvmOverloads constructor(
 
     private fun requirePlayer(): Player {
         return mPlayer!!
+    }
+
+    private fun genericPickerDialog(
+        picker: IPickerDialog,
+        @StringRes titleRes: Int,
+        property: String,
+        restoreState: StateRestoreCallback
+    ) {
+        val dialog = with(AlertDialog.Builder(context)) {
+            setTitle(titleRes)
+            setView(picker.buildView(LayoutInflater.from(context)))
+            setPositiveButton(R.string.dialog_ok) { _, _ ->
+                picker.number?.let {
+                    if (picker.isInteger()) NativeLibrary.setPropertyInt(property, it.toInt())
+                    else NativeLibrary.setPropertyDouble(property, it)
+                }
+            }
+            setNegativeButton(R.string.dialog_cancel) { dialog, _ -> dialog.cancel() }
+            setOnDismissListener { restoreState() }
+            create()
+        }
+
+        picker.number = NativeLibrary.getPropertyDouble(property)
+        dialog.show()
     }
 
     // actions
@@ -197,74 +230,74 @@ class HudContainer @JvmOverloads constructor(
     private fun pickAudio() =
         selectTrack("audio", { requirePlayer().aid }, { requirePlayer().aid = it })
 
+    private fun updateSpeedButton() {
+        mBinding.cycleSpeedBtn.text = getString(R.string.ui_speed, requirePlayer().playbackSpeed)
+    }
+
     private fun pickSpeed() {
         // TODO: replace this with SliderPickerDialog
-//        val picker = SpeedPickerDialog()
-//
-//        val restore = pauseForDialog()
-//        genericPickerDialog(picker, R.string.title_speed_dialog, "speed") {
-//            updateSpeedButton()
-//            restore()
-//        }
+        val picker = SpeedPickerDialog()
+
+        val restore = pauseForDialog()
+        genericPickerDialog(picker, R.string.title_speed_dialog, "speed") {
+            updateSpeedButton()
+            restore()
+        }
     }
 
     private fun pickSub() {
-        // TODO
-//        val restore = pauseForDialog()
-//        val impl = SubTrackDialog(player)
-//        lateinit var dialog: AlertDialog
-//        impl.listener = { it, secondary ->
-//            if (secondary) player.secondarySid = it.mpvId
-//            else player.sid = it.mpvId
-//            dialog.dismiss()
-//            trackSwitchNotification { TrackData(it.mpvId, SubTrackDialog.TRACK_TYPE) }
-//        }
-//
-//        dialog = with(AlertDialog.Builder(this)) {
-//            setView(impl.buildView(layoutInflater))
-//            setOnDismissListener { restore() }
-//            create()
-//        }
-//        dialog.show()
+        val restore = pauseForDialog()
+        val impl = SubTrackDialog(requirePlayer())
+        lateinit var dialog: AlertDialog
+        impl.listener = { it, secondary ->
+            if (secondary) requirePlayer().secondarySid = it.mpvId
+            else requirePlayer().sid = it.mpvId
+            dialog.dismiss()
+            trackSwitchNotification { TrackData(it.mpvId, SubTrackDialog.TRACK_TYPE) }
+        }
+
+        dialog = with(AlertDialog.Builder(context)) {
+            setView(impl.buildView(LayoutInflater.from(context)))
+            setOnDismissListener { restore() }
+            create()
+        }
+        dialog.show()
     }
 
     private fun pauseForDialog(): StateRestoreCallback {
-        // TODO
-//        val useKeepOpen = when (noUIPauseMode) {
-//            "always" -> true
-//            "audio-only" -> isPlayingAudioOnly()
-//            else -> false // "never"
-//        }
-//        if (useKeepOpen) {
-//            // don't pause but set keep-open so mpv doesn't exit while the user is doing stuff
-//            val oldValue = MPVLib.getPropertyString("keep-open")
-//            MPVLib.setPropertyBoolean("keep-open", true)
-//            return {
-//                MPVLib.setPropertyString("keep-open", oldValue)
-//            }
-//        }
-//
-//        // Pause playback during UI dialogs
-//        val wasPlayerPaused = player.paused ?: true
-//        player.paused = true
-//        return {
-//            if (!wasPlayerPaused) player.paused = false
-//        }
+        val useKeepOpen = when (noUIPauseMode) {
+            "always" -> true
+            "audio-only" -> isPlayingAudioOnly()
+            else -> false // "never"
+        }
+        if (useKeepOpen) {
+            // don't pause but set keep-open so mpv doesn't exit while the user is doing stuff
+            val oldValue = NativeLibrary.getPropertyString("keep-open")!!
+            NativeLibrary.setPropertyBoolean("keep-open", true)
+            return {
+                NativeLibrary.setPropertyString("keep-open", oldValue)
+            }
+        }
 
-        return {}
+        // Pause playback during UI dialogs
+        val wasPlayerPaused = requirePlayer().paused ?: true
+        requirePlayer().paused = true
+        return {
+            if (!wasPlayerPaused) requirePlayer().paused = false
+        }
     }
 
     private fun openPlaylistMenu(restore: StateRestoreCallback) {
-        // TODO
-//        val impl = PlaylistDialog(player)
+        // TODO 同首页功能，待重构
+//        val impl = PlaylistDialog(mPlayer!!)
 //        lateinit var dialog: AlertDialog
 //
-//        impl.listeners = object : PlaylistDialog.Listeners {
+//        impl.listener = object : PlaylistDialog.Listener {
 //            private fun openFilePicker(skip: Int) {
-//                openFilePickerFor(RCODE_LOAD_FILE, "", skip) { result, data ->
-//                    if (result == AppCompatActivity.RESULT_OK) {
+//               openFilePickerFor(RCODE_LOAD_FILE, "", skip) { result, data ->
+//                    if (result == Activity.RESULT_OK) {
 //                        val path = data!!.getStringExtra("path")
-//                        MPVLib.command(arrayOf("loadfile", path, "append"))
+//                        NativeLibrary.command(arrayOf("loadfile", path, "append"))
 //                        impl.refresh()
 //                    }
 //                }
@@ -285,7 +318,7 @@ class HudContainer @JvmOverloads constructor(
 //            }
 //
 //            override fun onItemPicked(item: MPVView.PlaylistItem) {
-//                MPVLib.setPropertyInt("playlist-pos", item.index)
+//                NativeLibrary.setPropertyInt("playlist-pos", item.index)
 //                dialog.dismiss()
 //            }
 //        }
@@ -305,8 +338,7 @@ class HudContainer @JvmOverloads constructor(
             Pair("HW (mediacodec-copy)", "mediacodec-copy"), Pair("SW", "no")
         )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) items.add(
-            0,
-            Pair("HW+ (mediacodec)", "mediacodec")
+            0, Pair("HW+ (mediacodec)", "mediacodec")
         )
         val hwdecActive = requirePlayer().hwdecActive
         val selectedIndex = items.indexOfFirst { it.second == hwdecActive }
@@ -331,8 +363,7 @@ class HudContainer @JvmOverloads constructor(
 
         with(AlertDialog.Builder(context)) {
             setSingleChoiceItems(
-                tracks.map { it.name }.toTypedArray(),
-                selectedIndex
+                tracks.map { it.name }.toTypedArray(), selectedIndex
             ) { dialog, item ->
                 val trackId = tracks[item].mpvId
 
@@ -343,5 +374,12 @@ class HudContainer @JvmOverloads constructor(
             setOnDismissListener { restore() }
             create().show()
         }
+    }
+
+    private fun isPlayingAudioOnly(): Boolean {
+        if (requirePlayer().aid == -1)
+            return false
+        val fmt = NativeLibrary.getPropertyString("video-format")
+        return fmt.isNullOrEmpty() || arrayOf("mjpeg", "png", "bmp").indexOf(fmt) != -1
     }
 }

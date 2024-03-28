@@ -1,7 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="pref_video_interpolation_sync_default" translatable="false">audio</string>
+
     <string name="track_audio">Audio</string>
     <string name="track_subs">Subs</string> <!-- short for "Subtitles" -->
     <string name="track_off">Off</string>
+    <string name="track_primary">Primary</string>
+    <string name="track_secondary">Secondary</string>
+
+    <string name="dialog_ok">OK</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_save">Save</string>
+    <string name="dialog_yes">Yes</string>
+    <string name="dialog_no">No</string>
+    <string name="dialog_prev">Prev</string>
+    <string name="dialog_next">Next</string>
+    <string name="dialog_reset">Reset</string>
+
+    <string name="ui_speed">%.2fx</string>
+
+    <string name="title_speed_dialog">Playback speed</string>
+
+    <string name="action_playlist">Playlist</string>
+    <string name="action_open_url">Open URL</string>
+    <string name="action_pick_file">Pick File</string>
+
+    <string name="open_external_audio">Open external audio…</string>
+    <string name="open_external_sub">Open external subtitle…</string>
+
+    <string name="resume_bg_playback">Play in background</string>
+
+    <string name="chapter_button">Chapter</string>
+
+    <string name="advanced_menu">Advanced…</string>
+
+    <string name="switch_orientation">Switch Orientation</string>
 </resources>

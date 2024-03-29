@@ -1,5 +1,6 @@
 package io.viper.android.mpv.player
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.net.Uri
@@ -9,9 +10,12 @@ import android.util.Log
 import android.view.Gravity
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import io.viper.android.mpv.ActivityResultCallback
 import io.viper.android.mpv.IPlayerHandler
 import io.viper.android.mpv.core.Player
 import io.viper.android.mpv.hud.HudContainer
@@ -19,7 +23,11 @@ import io.viper.android.mpv.view.PlayerView
 
 class PlayerActivity : AppCompatActivity(), IPlayerHandler {
 
+    private lateinit var mDocumentChooser: ActivityResultLauncher<Array<String>>
+    private var mDocumentChooserResultCallback: ActivityResultCallback? = null
+
     private val onLoadCommands = mutableListOf<Array<String>>()
+
     private var mToast: Toast? = null
     private val psc = PlaybackStateCache()
     private val mPlayerView: PlayerView by lazy {
@@ -33,6 +41,7 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler {
     }
 
     private var autoRotationMode = "auto"
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,12 +70,16 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler {
 
         // attach to player
         mPlayerView.attachToPlayer(
-            applicationContext.filesDir.path,
-            applicationContext.cacheDir.path
+            applicationContext.filesDir.path, applicationContext.cacheDir.path
         )
         mHudContainer.mPlayer = mPlayer
         mHudContainer.mPlayerHandler = this
         mPlayer.playFile(filepath)
+
+        mDocumentChooser = registerForActivityResult(ActivityResultContracts.OpenDocument()) {
+            mDocumentChooserResultCallback?.invoke(it)
+            mDocumentChooserResultCallback = null
+        }
     }
 
     // Intent/Uri parsing
@@ -96,7 +109,7 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler {
         return filepath
     }
 
-    private fun openContentFd(uri: Uri): String? {
+    override fun openContentFd(uri: Uri): String? {
         val resolver = applicationContext.contentResolver
         Log.v(TAG, "Resolving content URI: $uri")
         val fd = try {
@@ -159,6 +172,21 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler {
             if (cancel) cancel()
             setText(msg)
             show()
+        }
+    }
+
+    override fun activityMoveTaskToBack(nonRoot: Boolean) {
+        moveTaskToBack(nonRoot)
+    }
+
+    override fun openFilePickerFor(
+        titleRes: Int, callback: ActivityResultCallback
+    ) {
+        try {
+            mDocumentChooserResultCallback = callback
+            mDocumentChooser.launch(arrayOf("*/*"))
+        } catch (e: ActivityNotFoundException) {
+            // ignore
         }
     }
 

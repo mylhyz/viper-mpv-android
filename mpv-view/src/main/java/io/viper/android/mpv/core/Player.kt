@@ -93,6 +93,23 @@ class Player {
         }
     }
 
+    data class Chapter(val index: Int, val title: String?, val time: Double)
+
+    fun loadChapters(): MutableList<Chapter> {
+        val chapters = mutableListOf<Chapter>()
+        val count = NativeLibrary.getPropertyInt("chapter-list/count")!!
+        for (i in 0 until count) {
+            val title = NativeLibrary.getPropertyString("chapter-list/$i/title")
+            val time = NativeLibrary.getPropertyDouble("chapter-list/$i/time")!!
+            chapters.add(Chapter(
+                index=i,
+                title=title,
+                time=time
+            ))
+        }
+        return chapters
+    }
+
     fun surfaceCreated(holder: SurfaceHolder) {
         NativeLibrary.attachSurface(holder.surface)
         // This forces mpv to render subs/osd/whatever into our surface even if it would ordinarily not

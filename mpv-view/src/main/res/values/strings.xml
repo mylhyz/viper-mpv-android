@@ -18,6 +18,8 @@
     <string name="dialog_reset">Reset</string>
 
     <string name="ui_speed">%.2fx</string>
+    <string name="ui_chapter_fallback">Chapter %1$d (%2$s)</string>
+    <string name="ui_chapter">%1$s (%2$s)</string>
 
     <string name="title_speed_dialog">Playback speed</string>
 
@@ -35,4 +37,18 @@
     <string name="advanced_menu">Advanced…</string>
 
     <string name="switch_orientation">Switch Orientation</string>
+
+    <string name="format_fixed_number" translatable="false">%.0f</string>
+
+    <!-- dialog_advanced_menu -->
+    <string name="contrast">Contrast</string>
+    <string name="video_brightness">Video Brightness</string>
+    <string name="gamma">Gamma</string>
+    <string name="saturation">Saturation</string>
+    <string name="sub_seek_button">Seek by subtitle</string>
+    <string name="toggle_stats">Toggle stats</string>
+    <string name="audio_delay">Audio delay</string>
+    <string name="sub_delay">Subtitle delay</string>
+    <string name="aspect_ratio">Aspect ratio</string>
+
 </resources>

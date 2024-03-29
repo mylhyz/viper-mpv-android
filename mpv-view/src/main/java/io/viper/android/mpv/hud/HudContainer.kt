@@ -522,6 +522,6 @@ class HudContainer @JvmOverloads constructor(
     }
 
     companion object {
-        private const val TAG = "HudContainer"
+        private const val TAG = "mpv.HudContainer"
     }
 }

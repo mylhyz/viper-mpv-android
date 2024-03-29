@@ -36,7 +36,7 @@ class Player {
         for (i in 0 until count) {
             val filename = NativeLibrary.getPropertyString("playlist/$i/filename")!!
             val title = NativeLibrary.getPropertyString("playlist/$i/title")
-            playlist.add(PlaylistItem(index=i, filename=filename, title=title))
+            playlist.add(PlaylistItem(index = i, filename = filename, title = title))
         }
         return playlist
     }
@@ -73,8 +73,9 @@ class Player {
     }
 
     fun getRepeat(): Int {
-        return when (NativeLibrary.getPropertyString("loop-playlist") +
-                NativeLibrary.getPropertyString("loop-file")) {
+        return when (NativeLibrary.getPropertyString("loop-playlist") + NativeLibrary.getPropertyString(
+            "loop-file"
+        )) {
             "noinf" -> 2
             "infno" -> 1
             else -> 0
@@ -101,11 +102,11 @@ class Player {
         for (i in 0 until count) {
             val title = NativeLibrary.getPropertyString("chapter-list/$i/title")
             val time = NativeLibrary.getPropertyDouble("chapter-list/$i/time")!!
-            chapters.add(Chapter(
-                index=i,
-                title=title,
-                time=time
-            ))
+            chapters.add(
+                Chapter(
+                    index = i, title = title, time = time
+                )
+            )
         }
         return chapters
     }
@@ -270,6 +271,6 @@ class Player {
     }
 
     companion object {
-        const val TAG = "MPV-Player"
+        const val TAG = "mpv.Player"
     }
 }

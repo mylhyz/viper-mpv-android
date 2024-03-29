@@ -231,7 +231,7 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler {
 
 
     companion object {
-        private const val TAG = "PlayerActivity"
+        private const val TAG = "mpv.PlayerActivity"
 
         private const val ASPECT_RATIO_MIN = 1.2f // covers 5:4 and up
 

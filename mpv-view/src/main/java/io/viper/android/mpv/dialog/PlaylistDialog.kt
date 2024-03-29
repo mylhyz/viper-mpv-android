@@ -118,6 +118,6 @@ class PlaylistDialog(private val mPlayer: Player) {
     }
 
     companion object {
-        private const val TAG = ""
+        private const val TAG = "mpv.PlaylistDialog"
     }
 }

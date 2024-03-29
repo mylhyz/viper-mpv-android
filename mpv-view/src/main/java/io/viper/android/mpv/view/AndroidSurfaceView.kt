@@ -25,6 +25,6 @@ class AndroidSurfaceView @JvmOverloads constructor(context: Context, attrs: Attr
     }
 
     companion object {
-        private const val TAG = "AndroidSurfaceView"
+        private const val TAG = "mpv.AndroidSurfaceView"
     }
 }

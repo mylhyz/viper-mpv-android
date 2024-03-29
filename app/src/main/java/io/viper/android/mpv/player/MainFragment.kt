@@ -10,6 +10,7 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import com.nononsenseapps.filepicker.doc.DocumentPickerActivity
+import io.viper.android.mpv.OpenUrlDialog
 
 class MainFragment : Fragment(R.layout.fragment_main) {
 

@@ -180,7 +180,7 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler {
     }
 
     override fun openFilePickerFor(
-        titleRes: Int, callback: ActivityResultCallback
+        callback: ActivityResultCallback
     ) {
         try {
             mDocumentChooserResultCallback = callback

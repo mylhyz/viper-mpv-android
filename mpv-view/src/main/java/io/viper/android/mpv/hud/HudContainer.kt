@@ -15,9 +15,11 @@ import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import io.viper.android.mpv.IPlayerHandler
 import io.viper.android.mpv.NativeLibrary
+import io.viper.android.mpv.OpenUrlDialog
 import io.viper.android.mpv.core.Player
 import io.viper.android.mpv.dialog.DecimalPickerDialog
 import io.viper.android.mpv.dialog.IPickerDialog
+import io.viper.android.mpv.dialog.PlaylistDialog
 import io.viper.android.mpv.dialog.SliderPickerDialog
 import io.viper.android.mpv.dialog.SpeedPickerDialog
 import io.viper.android.mpv.dialog.SubTrackDialog
@@ -73,7 +75,9 @@ class HudContainer @JvmOverloads constructor(
     data class MenuItem(@IdRes val idRes: Int, val handler: () -> Boolean)
 
     private fun genericMenu(
-        @LayoutRes layoutRes: Int, buttons: List<MenuItem>, hiddenButtons: Set<Int>,
+        @LayoutRes layoutRes: Int,
+        buttons: List<MenuItem>,
+        hiddenButtons: Set<Int>,
         restoreState: StateRestoreCallback
     ) {
         lateinit var dialog: AlertDialog
@@ -247,10 +251,7 @@ class HudContainer @JvmOverloads constructor(
             arrayOf(R.id.contrastBtn, R.id.brightnessBtn, R.id.gammaBtn, R.id.saturationBtn)
         val basicProps = arrayOf("contrast", "brightness", "gamma", "saturation")
         val basicTitles = arrayOf(
-            R.string.contrast,
-            R.string.video_brightness,
-            R.string.gamma,
-            R.string.saturation
+            R.string.contrast, R.string.video_brightness, R.string.gamma, R.string.saturation
         )
         basicIds.forEachIndexed { index, id ->
             buttons.add(MenuItem(id) {
@@ -271,12 +272,20 @@ class HudContainer @JvmOverloads constructor(
             })
         }
 
-        if (requirePlayer().vid == -1)
-            hiddenButtons.addAll(arrayOf(R.id.rowVideo1, R.id.rowVideo2, R.id.aspectBtn))
-        if (requirePlayer().aid == -1 || requirePlayer().vid == -1)
-            hiddenButtons.add(R.id.audioDelayBtn)
-        if (requirePlayer().sid == -1)
-            hiddenButtons.addAll(arrayOf(R.id.subDelayBtn, R.id.rowSubSeek))
+        if (requirePlayer().vid == -1) hiddenButtons.addAll(
+            arrayOf(
+                R.id.rowVideo1,
+                R.id.rowVideo2,
+                R.id.aspectBtn
+            )
+        )
+        if (requirePlayer().aid == -1 || requirePlayer().vid == -1) hiddenButtons.add(R.id.audioDelayBtn)
+        if (requirePlayer().sid == -1) hiddenButtons.addAll(
+            arrayOf(
+                R.id.subDelayBtn,
+                R.id.rowSubSeek
+            )
+        )
         /******/
 
         genericMenu(R.layout.dialog_advanced_menu, buttons, hiddenButtons, restoreState)
@@ -291,9 +300,8 @@ class HudContainer @JvmOverloads constructor(
             val data = uri.toString()
             // file picker may return a content URI or a bare file path
             val path = data
-            val path2 =
-                if (path.startsWith("content://")) mPlayerHandler?.openContentFd(uri)
-                else path
+            val path2 = if (path.startsWith("content://")) mPlayerHandler?.openContentFd(uri)
+            else path
             NativeLibrary.command(arrayOf(cmd, path2, "cached"))
         }
 
@@ -301,17 +309,15 @@ class HudContainer @JvmOverloads constructor(
         val hiddenButtons = mutableSetOf<Int>()
         val buttons: MutableList<MenuItem> = mutableListOf(MenuItem(R.id.audioBtn) {
             mPlayerHandler?.openFilePickerFor(
-                R.string.open_external_audio
-            ) { data ->
-                addExternalThing("audio-add", data)
+            ) { uri ->
+                addExternalThing("audio-add", uri)
                 restoreState()
             }; false
         },
             MenuItem(R.id.subBtn) {
                 mPlayerHandler?.openFilePickerFor(
-                    R.string.open_external_sub
-                ) { data ->
-                    addExternalThing("sub-add", data)
+                ) { uri ->
+                    addExternalThing("sub-add", uri)
                     restoreState()
                 }; false
             },
@@ -330,9 +336,7 @@ class HudContainer @JvmOverloads constructor(
                 val chapterArray = chapters.map {
                     val timecode = prettyTime(it.time.roundToInt())
                     if (!it.title.isNullOrEmpty()) getString(
-                        R.string.ui_chapter,
-                        it.title,
-                        timecode
+                        R.string.ui_chapter, it.title, timecode
                     )
                     else getString(R.string.ui_chapter_fallback, it.index + 1, timecode)
                 }.toTypedArray()
@@ -424,47 +428,46 @@ class HudContainer @JvmOverloads constructor(
     }
 
     private fun openPlaylistMenu(restore: StateRestoreCallback) {
-        // TODO 同首页功能，待重构
-//        val impl = PlaylistDialog(mPlayer!!)
-//        lateinit var dialog: AlertDialog
-//
-//        impl.listener = object : PlaylistDialog.Listener {
-//            private fun openFilePicker(skip: Int) {
-//               openFilePickerFor(RCODE_LOAD_FILE, "", skip) { result, data ->
-//                    if (result == Activity.RESULT_OK) {
-//                        val path = data!!.getStringExtra("path")
-//                        NativeLibrary.command(arrayOf("loadfile", path, "append"))
-//                        impl.refresh()
-//                    }
-//                }
-//            }
-//
-//            override fun pickFile() = openFilePicker(FilePickerActivity.FILE_PICKER)
-//
-//            override fun openUrl() {
-//                val helper = Utils.OpenUrlDialog(this@MPVActivity)
-//                with(helper) {
-//                    builder.setPositiveButton(R.string.dialog_ok) { _, _ ->
-//                        MPVLib.command(arrayOf("loadfile", helper.text, "append"))
-//                        impl.refresh()
-//                    }
-//                    builder.setNegativeButton(R.string.dialog_cancel) { dialog, _ -> dialog.cancel() }
-//                    create().show()
-//                }
-//            }
-//
-//            override fun onItemPicked(item: MPVView.PlaylistItem) {
-//                NativeLibrary.setPropertyInt("playlist-pos", item.index)
-//                dialog.dismiss()
-//            }
-//        }
-//
-//        dialog = with(AlertDialog.Builder(this)) {
-//            setView(impl.buildView(layoutInflater))
-//            setOnDismissListener { restore() }
-//            create()
-//        }
-//        dialog.show()
+        val impl = PlaylistDialog(mPlayer!!)
+        lateinit var dialog: AlertDialog
+
+        impl.listener = object : PlaylistDialog.Listener {
+            private fun openFilePicker() {
+                mPlayerHandler?.openFilePickerFor() { uri ->
+                    uri?.let {
+                        val path = it.toString()
+                        NativeLibrary.command(arrayOf("loadfile", path, "append"))
+                        impl.refresh()
+                    }
+                }
+            }
+
+            override fun pickFile() = openFilePicker()
+
+            override fun openUrl() {
+                val helper = OpenUrlDialog(context)
+                with(helper) {
+                    builder.setPositiveButton(R.string.dialog_ok) { _, _ ->
+                        NativeLibrary.command(arrayOf("loadfile", helper.text, "append"))
+                        impl.refresh()
+                    }
+                    builder.setNegativeButton(R.string.dialog_cancel) { dialog, _ -> dialog.cancel() }
+                    create().show()
+                }
+            }
+
+            override fun onItemPicked(item: Player.PlaylistItem) {
+                NativeLibrary.setPropertyInt("playlist-pos", item.index)
+                dialog.dismiss()
+            }
+        }
+
+        dialog = with(AlertDialog.Builder(context)) {
+            setView(impl.buildView(LayoutInflater.from(context)))
+            setOnDismissListener { restore() }
+            create()
+        }
+        dialog.show()
     }
 
     private fun pickDecoder() {
@@ -513,8 +516,7 @@ class HudContainer @JvmOverloads constructor(
     }
 
     private fun isPlayingAudioOnly(): Boolean {
-        if (requirePlayer().aid == -1)
-            return false
+        if (requirePlayer().aid == -1) return false
         val fmt = NativeLibrary.getPropertyString("video-format")
         return fmt.isNullOrEmpty() || arrayOf("mjpeg", "png", "bmp").indexOf(fmt) != -1
     }

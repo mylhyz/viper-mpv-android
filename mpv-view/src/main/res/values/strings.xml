@@ -40,6 +40,8 @@
 
     <string name="format_fixed_number" translatable="false">%.0f</string>
 
+    <string name="uri_invalid_protocol">Invalid protocol</string>
+
     <!-- dialog_advanced_menu -->
     <string name="contrast">Contrast</string>
     <string name="video_brightness">Video Brightness</string>

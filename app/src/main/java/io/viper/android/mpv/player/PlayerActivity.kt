@@ -17,6 +17,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import io.viper.android.mpv.ActivityResultCallback
 import io.viper.android.mpv.IPlayerHandler
+import io.viper.android.mpv.NativeLibrary
 import io.viper.android.mpv.core.Player
 import io.viper.android.mpv.hud.HudContainer
 import io.viper.android.mpv.view.PlayerView
@@ -69,9 +70,10 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler {
         }
 
         // attach to player
-        mPlayerView.attachToPlayer(
+        mPlayerView.initPlayer(
             applicationContext.filesDir.path, applicationContext.cacheDir.path
         )
+        NativeLibrary.addEventObserver(mPlayer)
         mHudContainer.mPlayer = mPlayer
         mHudContainer.mPlayerHandler = this
         mPlayer.playFile(filepath)
@@ -80,6 +82,11 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler {
             mDocumentChooserResultCallback?.invoke(it)
             mDocumentChooserResultCallback = null
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        NativeLibrary.removeEventObserver(mPlayer)
     }
 
     // Intent/Uri parsing

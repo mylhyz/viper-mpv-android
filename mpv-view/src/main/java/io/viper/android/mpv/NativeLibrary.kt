@@ -78,7 +78,18 @@ class NativeLibrary {
         @JvmStatic
         external fun observeProperty(property: String, format: Int)
 
+        @Synchronized
+        fun addEventObserver(observer: EventObserver) {
+            observers.add(observer)
+        }
+
+        @Synchronized
+        fun removeEventObserver(observer: EventObserver) {
+            observers.remove(observer)
+        }
+
         @JvmStatic
+        @Synchronized
         fun eventProperty(property: String, value: Long) {
             observers.forEach {
                 it.eventProperty(property, value)
@@ -86,6 +97,7 @@ class NativeLibrary {
         }
 
         @JvmStatic
+        @Synchronized
         fun eventProperty(property: String, value: Boolean) {
             observers.forEach {
                 it.eventProperty(property, value)
@@ -93,6 +105,7 @@ class NativeLibrary {
         }
 
         @JvmStatic
+        @Synchronized
         fun eventProperty(property: String, value: String) {
             observers.forEach {
                 it.eventProperty(property, value)
@@ -100,6 +113,7 @@ class NativeLibrary {
         }
 
         @JvmStatic
+        @Synchronized
         fun eventProperty(property: String) {
             observers.forEach {
                 it.eventProperty(property)
@@ -107,6 +121,7 @@ class NativeLibrary {
         }
 
         @JvmStatic
+        @Synchronized
         fun event(evtId: Int) {
             observers.forEach {
                 it.event(evtId)
@@ -114,6 +129,7 @@ class NativeLibrary {
         }
 
         @JvmStatic
+        @Synchronized
         fun logMessage(prefix: String, level: Int, text: String) {
             Log.println(level, prefix, text)
         }

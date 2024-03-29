@@ -10,7 +10,7 @@ import android.view.WindowManager
 import io.viper.android.mpv.NativeLibrary
 import io.viper.android.mpv.view.R
 
-class Player {
+class Player : NativeLibrary.EventObserver {
 
     private var filePath: String? = null
     private var voInUse: String = ""
@@ -109,6 +109,26 @@ class Player {
             )
         }
         return chapters
+    }
+
+    override fun eventProperty(property: String) {
+        Log.d(TAG, "eventProperty => $property")
+    }
+
+    override fun eventProperty(property: String, value: Long) {
+        Log.d(TAG, "eventProperty => $property : $value")
+    }
+
+    override fun eventProperty(property: String, value: Boolean) {
+        Log.d(TAG, "eventProperty => $property : $value")
+    }
+
+    override fun eventProperty(property: String, value: String) {
+        Log.d(TAG, "eventProperty => $property : $value")
+    }
+
+    override fun event(evtId: Int) {
+        Log.d(TAG, "event => $evtId")
     }
 
     fun surfaceCreated(holder: SurfaceHolder) {

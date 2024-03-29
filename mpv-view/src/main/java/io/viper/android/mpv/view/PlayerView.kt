@@ -20,7 +20,7 @@ class PlayerView @JvmOverloads constructor(
         )
     }
 
-    fun attachToPlayer(
+    fun initPlayer(
         configDir: String,
         cacheDir: String
     ) {

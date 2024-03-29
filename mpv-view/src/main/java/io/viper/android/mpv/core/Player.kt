@@ -15,6 +15,8 @@ class Player : NativeLibrary.EventObserver {
     private var filePath: String? = null
     private var voInUse: String = ""
 
+    private var playbackHasStarted = false
+    val onloadCommands = mutableListOf<Array<String?>>()
 
     // 暴露给外部
     var vid: Int by TrackDelegate("vid")
@@ -27,6 +29,8 @@ class Player : NativeLibrary.EventObserver {
     var tracks = mapOf<String, MutableList<Track>>(
         "audio" to arrayListOf(), "video" to arrayListOf(), "sub" to arrayListOf()
     )
+
+    private var statsLuaMode = 0
 
     data class PlaylistItem(val index: Int, val filename: String, val title: String?)
 
@@ -129,6 +133,18 @@ class Player : NativeLibrary.EventObserver {
 
     override fun event(evtId: Int) {
         Log.d(TAG, "event => $evtId")
+        // TODO 处理 MPV_EVENT_SHUTDOWN
+        if (NativeLibrary.EventId.MPV_EVENT_START_FILE == evtId) {
+            for (c in onloadCommands)
+                NativeLibrary.command(c)
+            if (this.statsLuaMode > 0 && !playbackHasStarted) {
+                NativeLibrary.command(arrayOf("script-binding", "stats/display-stats-toggle"))
+                NativeLibrary.command(arrayOf("script-binding", "stats/${this.statsLuaMode}"))
+            }
+
+            playbackHasStarted = true
+        }
+        // 处理UI状态更新
     }
 
     fun surfaceCreated(holder: SurfaceHolder) {

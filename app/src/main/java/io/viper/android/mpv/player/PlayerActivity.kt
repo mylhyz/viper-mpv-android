@@ -27,8 +27,6 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler {
     private lateinit var mDocumentChooser: ActivityResultLauncher<Array<String>>
     private var mDocumentChooserResultCallback: ActivityResultCallback? = null
 
-    private val onLoadCommands = mutableListOf<Array<String>>()
-
     private var mToast: Toast? = null
     private val psc = PlaybackStateCache()
     private val mPlayerView: PlayerView by lazy {
@@ -138,11 +136,11 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler {
     }
 
     private fun parseIntentExtras(extras: Bundle?) {
-        onLoadCommands.clear()
+        mPlayer.onloadCommands.clear()
         if (extras == null) return
 
         // Refer to http://mpv-android.github.io/mpv-android/intent.html
-        if (extras.getByte("decode_mode") == 2.toByte()) onLoadCommands.add(
+        if (extras.getByte("decode_mode") == 2.toByte()) mPlayer.onloadCommands.add(
             arrayOf(
                 "set", "file-local-options/hwdec", "no"
             )
@@ -159,12 +157,12 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler {
                         .any()) "select" else "auto"
 
                 Log.v(TAG, "Adding subtitles from intent extras: $subfile")
-                onLoadCommands.add(arrayOf("sub-add", subfile, flag))
+                mPlayer.onloadCommands.add(arrayOf("sub-add", subfile, flag))
             }
         }
         if (extras.getInt("position", 0) > 0) {
             val pos = extras.getInt("position", 0) / 1000f
-            onLoadCommands.add(arrayOf("set", "start", pos.toString()))
+            mPlayer.onloadCommands.add(arrayOf("set", "start", pos.toString()))
         }
     }
 

@@ -521,6 +521,10 @@ class HudContainer @JvmOverloads constructor(
         return fmt.isNullOrEmpty() || arrayOf("mjpeg", "png", "bmp").indexOf(fmt) != -1
     }
 
+    fun resume() {
+
+    }
+
     companion object {
         private const val TAG = "mpv.HudContainer"
     }

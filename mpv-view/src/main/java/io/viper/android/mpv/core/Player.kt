@@ -30,6 +30,40 @@ class Player : NativeLibrary.EventObserver {
         "audio" to arrayListOf(), "video" to arrayListOf(), "sub" to arrayListOf()
     )
 
+    private fun loadTracks(context: Context) {
+        for (list in tracks.values) {
+            list.clear()
+            // pseudo-track to allow disabling audio/subs
+            list.add(Track(-1, context.getString(R.string.track_off)))
+        }
+        val count = NativeLibrary.getPropertyInt("track-list/count")!!
+        // Note that because events are async, properties might disappear at any moment
+        // so use ?: continue instead of !!
+        for (i in 0 until count) {
+            val type = NativeLibrary.getPropertyString("track-list/$i/type") ?: continue
+            if (!tracks.containsKey(type)) {
+                Log.w(TAG, "Got unknown track type: $type")
+                continue
+            }
+            val mpvId = NativeLibrary.getPropertyInt("track-list/$i/id") ?: continue
+            val lang = NativeLibrary.getPropertyString("track-list/$i/lang")
+            val title = NativeLibrary.getPropertyString("track-list/$i/title")
+
+            val trackName = if (!lang.isNullOrEmpty() && !title.isNullOrEmpty())
+                context.getString(R.string.ui_track_title_lang, mpvId, title, lang)
+            else if (!lang.isNullOrEmpty() || !title.isNullOrEmpty())
+                context.getString(R.string.ui_track_text, mpvId, (lang ?: "") + (title ?: ""))
+            else
+                context.getString(R.string.ui_track, mpvId)
+            tracks.getValue(type).add(
+                Track(
+                    mpvId = mpvId,
+                    name = trackName
+                )
+            )
+        }
+    }
+
     private var statsLuaMode = 0
 
     data class PlaylistItem(val index: Int, val filename: String, val title: String?)
@@ -113,6 +147,11 @@ class Player : NativeLibrary.EventObserver {
             )
         }
         return chapters
+    }
+
+    fun resume(context: Context) {
+        val paused = paused ?: return
+        loadTracks(context)
     }
 
     override fun eventProperty(property: String) {

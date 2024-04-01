@@ -82,6 +82,12 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        mHudContainer.resume()
+        mPlayer.resume(this)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         NativeLibrary.removeEventObserver(mPlayer)

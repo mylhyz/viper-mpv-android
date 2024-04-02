@@ -95,6 +95,9 @@ class Player : NativeLibrary.EventObserver {
     var paused: Boolean?
         get() = NativeLibrary.getPropertyBoolean("pause")
         set(paused) = NativeLibrary.setPropertyBoolean("pause", paused!!)
+    var timePos: Int?
+        get() = NativeLibrary.getPropertyInt("time-pos")
+        set(progress) = NativeLibrary.setPropertyInt("time-pos", progress!!)
 
     fun getShuffle(): Boolean {
         return NativeLibrary.getPropertyBoolean("shuffle")!!

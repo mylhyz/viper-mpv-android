@@ -11,4 +11,5 @@ interface IPlayerHandler {
     fun openFilePickerFor(
         callback: ActivityResultCallback
     )
+    fun cycleOrientation()
 }

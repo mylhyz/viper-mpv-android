@@ -29,6 +29,11 @@
         <activity
             android:name="com.nononsenseapps.filepicker.doc.DocumentPickerActivity"
             android:theme="@style/Theme.MPV.FilePickerTheme" />
+
+        <service
+            android:name=".BackgroundPlaybackService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
         <activity
             android:name=".PlayerActivity"
             android:exported="true"

@@ -34,7 +34,7 @@ typealias StateRestoreCallback = () -> Unit
 
 class HudContainer @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
-) : FrameLayout(context, attrs, defStyleAttr) {
+) : FrameLayout(context, attrs, defStyleAttr), NativeLibrary.EventObserver {
 
     private val mBinding: HudContainerBinding =
         HudContainerBinding.inflate(LayoutInflater.from(context), this)
@@ -180,11 +180,7 @@ class HudContainer @JvmOverloads constructor(
     }
 
     private fun cycleOrientation() {
-        // TODO 直接调整Activity的横竖屏状态
-//        requestedOrientation = if (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
-//            ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-//        else
-//            ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        mPlayerHandler?.cycleOrientation()
     }
 
     private fun lockUI() {
@@ -522,6 +518,26 @@ class HudContainer @JvmOverloads constructor(
     }
 
     fun resume() {
+
+    }
+
+    override fun eventProperty(property: String) {
+
+    }
+
+    override fun eventProperty(property: String, value: Long) {
+
+    }
+
+    override fun eventProperty(property: String, value: Boolean) {
+
+    }
+
+    override fun eventProperty(property: String, value: String) {
+
+    }
+
+    override fun event(evtId: Int) {
 
     }
 

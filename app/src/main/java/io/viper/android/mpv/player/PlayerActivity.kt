@@ -6,6 +6,8 @@ import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
 import android.os.ParcelFileDescriptor
+import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import android.view.Gravity
 import android.widget.Toast
@@ -22,13 +24,15 @@ import io.viper.android.mpv.core.Player
 import io.viper.android.mpv.hud.HudContainer
 import io.viper.android.mpv.view.PlayerView
 
-class PlayerActivity : AppCompatActivity(), IPlayerHandler {
+class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventObserver {
 
     private lateinit var mDocumentChooser: ActivityResultLauncher<Array<String>>
     private var mDocumentChooserResultCallback: ActivityResultCallback? = null
 
     private var mToast: Toast? = null
     private val psc = PlaybackStateCache()
+    private var mediaSession: MediaSessionCompat? = null
+
     private val mPlayerView: PlayerView by lazy {
         findViewById(R.id.player_view)
     }
@@ -71,10 +75,15 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler {
         mPlayerView.initPlayer(
             applicationContext.filesDir.path, applicationContext.cacheDir.path
         )
-        NativeLibrary.addEventObserver(mPlayer)
         mHudContainer.mPlayer = mPlayer
         mHudContainer.mPlayerHandler = this
         mPlayer.playFile(filepath)
+        // register event observer
+        NativeLibrary.addEventObserver(mPlayer)
+        NativeLibrary.addEventObserver(mHudContainer)
+        NativeLibrary.addEventObserver(this)
+
+        mediaSession = initMediaSession()
 
         mDocumentChooser = registerForActivityResult(ActivityResultContracts.OpenDocument()) {
             mDocumentChooserResultCallback?.invoke(it)
@@ -90,6 +99,9 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler {
 
     override fun onDestroy() {
         super.onDestroy()
+        // unregister event observer
+        NativeLibrary.removeEventObserver(this)
+        NativeLibrary.removeEventObserver(mHudContainer)
         NativeLibrary.removeEventObserver(mPlayer)
     }
 
@@ -201,6 +213,12 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler {
         }
     }
 
+    override fun cycleOrientation() {
+        requestedOrientation =
+            if (requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE) ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+            else ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+    }
+
     // activity result
     private fun finishWithResult(code: Int, includeTimePos: Boolean = false) {
         // Refer to http://mpv-android.github.io/mpv-android/intent.html
@@ -240,6 +258,82 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler {
         else ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
     }
 
+    // Media Session handling
+
+    private fun initMediaSession(): MediaSessionCompat {/*
+            https://developer.android.com/guide/topics/media-apps/working-with-a-media-session
+            https://developer.android.com/guide/topics/media-apps/audio-app/mediasession-callbacks
+            https://developer.android.com/reference/android/support/v4/media/session/MediaSessionCompat
+         */
+        val session = MediaSessionCompat(this, TAG)
+        session.setFlags(0)
+        session.setCallback(object : MediaSessionCompat.Callback() {
+            override fun onPause() {
+                mPlayer.paused = true
+            }
+
+            override fun onPlay() {
+                mPlayer.paused = false
+            }
+
+            override fun onSeekTo(pos: Long) {
+                mPlayer.timePos = (pos / 1000).toInt()
+            }
+
+            override fun onSkipToNext() {
+                NativeLibrary.command(arrayOf("playlist-next"))
+            }
+
+            override fun onSkipToPrevious() {
+                NativeLibrary.command(arrayOf("playlist-prev"))
+            }
+
+            override fun onSetRepeatMode(repeatMode: Int) {
+                NativeLibrary.setPropertyString(
+                    "loop-playlist",
+                    if (repeatMode == PlaybackStateCompat.REPEAT_MODE_ALL) "inf" else "no"
+                )
+                NativeLibrary.setPropertyString(
+                    "loop-file",
+                    if (repeatMode == PlaybackStateCompat.REPEAT_MODE_ONE) "inf" else "no"
+                )
+            }
+
+            override fun onSetShuffleMode(shuffleMode: Int) {
+                mPlayer.changeShuffle(false, shuffleMode == PlaybackStateCompat.SHUFFLE_MODE_ALL)
+            }
+        })
+        return session
+    }
+
+    private fun updateMediaSession() {
+        synchronized(psc) {
+            mediaSession?.let { psc.write(it) }
+        }
+    }
+
+
+    // Event Observer
+
+    override fun eventProperty(property: String) {
+
+    }
+
+    override fun eventProperty(property: String, value: Long) {
+
+    }
+
+    override fun eventProperty(property: String, value: Boolean) {
+
+    }
+
+    override fun eventProperty(property: String, value: String) {
+
+    }
+
+    override fun event(evtId: Int) {
+
+    }
 
     companion object {
         private const val TAG = "mpv.PlayerActivity"

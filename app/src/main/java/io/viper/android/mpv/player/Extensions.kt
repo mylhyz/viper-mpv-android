@@ -126,18 +126,18 @@ class PlaybackStateCache {
     private var mediaMetadataBuilder = MediaMetadataCompat.Builder()
     private var playbackStateBuilder = PlaybackStateCompat.Builder()
 
-//    private fun buildMediaMetadata(includeThumb: Boolean): MediaMetadataCompat {
-//        // TODO could provide: genre, num_tracks, track_number, year
-//        return with (mediaMetadataBuilder) {
-//            putText(MediaMetadataCompat.METADATA_KEY_ALBUM, meta.mediaAlbum)
-//            if (includeThumb && BackgroundPlaybackService.thumbnail != null)
-//                putBitmap(MediaMetadataCompat.METADATA_KEY_ART, BackgroundPlaybackService.thumbnail)
-//            putText(MediaMetadataCompat.METADATA_KEY_ARTIST, meta.mediaArtist)
-//            putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration.takeIf { it > 0 } ?: -1)
-//            putText(MediaMetadataCompat.METADATA_KEY_TITLE, meta.mediaTitle)
-//            build()
-//        }
-//    }
+    private fun buildMediaMetadata(includeThumb: Boolean): MediaMetadataCompat {
+        // TODO could provide: genre, num_tracks, track_number, year
+        return with (mediaMetadataBuilder) {
+            putText(MediaMetadataCompat.METADATA_KEY_ALBUM, meta.mediaAlbum)
+            if (includeThumb && BackgroundPlaybackService.thumbnail != null)
+                putBitmap(MediaMetadataCompat.METADATA_KEY_ART, BackgroundPlaybackService.thumbnail)
+            putText(MediaMetadataCompat.METADATA_KEY_ARTIST, meta.mediaArtist)
+            putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration.takeIf { it > 0 } ?: -1)
+            putText(MediaMetadataCompat.METADATA_KEY_TITLE, meta.mediaTitle)
+            build()
+        }
+    }
 
     private fun buildPlaybackState(): PlaybackStateCompat {
         val stateInt = when {
@@ -166,15 +166,15 @@ class PlaybackStateCache {
         }
     }
 
-//    fun write(session: MediaSessionCompat, includeThumb: Boolean = true) {
-//        with (session) {
-//            setMetadata(buildMediaMetadata(includeThumb))
-//            val ps = buildPlaybackState()
-//            isActive = ps.state != PlaybackStateCompat.STATE_NONE
-//            setPlaybackState(ps)
-//            //setQueue(listOf()) TODO
-//        }
-//    }
+    fun write(session: MediaSessionCompat, includeThumb: Boolean = true) {
+        with (session) {
+            setMetadata(buildMediaMetadata(includeThumb))
+            val ps = buildPlaybackState()
+            isActive = ps.state != PlaybackStateCompat.STATE_NONE
+            setPlaybackState(ps)
+            //setQueue(listOf()) TODO
+        }
+    }
 }
 
 

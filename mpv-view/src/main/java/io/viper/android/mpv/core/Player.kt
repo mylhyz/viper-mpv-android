@@ -232,6 +232,8 @@ class Player : NativeLibrary.EventObserver {
         NativeLibrary.setOptionString("idle", "once")
 
         holder.addCallback(callback)
+
+        observeProperties()
     }
 
     fun playFile(fp: String) {
@@ -343,6 +345,35 @@ class Player : NativeLibrary.EventObserver {
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
         screenshotDir.mkdirs()
         NativeLibrary.setOptionString("screenshot-directory", screenshotDir.path)
+    }
+
+    private fun observeProperties() {
+        // This observes all properties needed by MPVView, MPVActivity or other classes
+        data class Property(val name: String, val format: Int = NativeLibrary.Format.MPV_FORMAT_NONE)
+        val p = arrayOf(
+            Property("time-pos", NativeLibrary.Format.MPV_FORMAT_INT64),
+            Property("duration", NativeLibrary.Format.MPV_FORMAT_INT64),
+            Property("pause", NativeLibrary.Format.MPV_FORMAT_FLAG),
+            Property("paused-for-cache", NativeLibrary.Format.MPV_FORMAT_FLAG),
+            Property("track-list"),
+            // observing double properties is not hooked up in the JNI code, but doing this
+            // will restrict updates to when it actually changes
+            Property("video-params/aspect", NativeLibrary.Format.MPV_FORMAT_DOUBLE),
+            //
+            Property("playlist-pos", NativeLibrary.Format.MPV_FORMAT_INT64),
+            Property("playlist-count", NativeLibrary.Format.MPV_FORMAT_INT64),
+            Property("video-format"),
+            Property("media-title", NativeLibrary.Format.MPV_FORMAT_STRING),
+            Property("metadata/by-key/Artist", NativeLibrary.Format.MPV_FORMAT_STRING),
+            Property("metadata/by-key/Album", NativeLibrary.Format.MPV_FORMAT_STRING),
+            Property("loop-playlist"),
+            Property("loop-file"),
+            Property("shuffle", NativeLibrary.Format.MPV_FORMAT_FLAG),
+            Property("hwdec-current")
+        )
+
+        for ((name, format) in p)
+            NativeLibrary.observeProperty(name, format)
     }
 
     companion object {

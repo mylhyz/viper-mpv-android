@@ -143,6 +143,19 @@ class NativeLibrary {
         fun event(evtId: Int)
     }
 
+    object Format {
+        const val MPV_FORMAT_NONE: Int = 0
+        const val MPV_FORMAT_STRING: Int = 1
+        const val MPV_FORMAT_OSD_STRING: Int = 2
+        const val MPV_FORMAT_FLAG: Int = 3
+        const val MPV_FORMAT_INT64: Int = 4
+        const val MPV_FORMAT_DOUBLE: Int = 5
+        const val MPV_FORMAT_NODE: Int = 6
+        const val MPV_FORMAT_NODE_ARRAY: Int = 7
+        const val MPV_FORMAT_NODE_MAP: Int = 8
+        const val MPV_FORMAT_BYTE_ARRAY: Int = 9
+    }
+
     object EventId {
         const val MPV_EVENT_NONE: Int = 0
         const val MPV_EVENT_SHUTDOWN: Int = 1

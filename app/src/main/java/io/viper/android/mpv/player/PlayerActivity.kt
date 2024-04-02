@@ -11,7 +11,6 @@ import android.os.ParcelFileDescriptor
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
-import android.view.Gravity
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
@@ -32,7 +31,6 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventO
     private lateinit var mDocumentChooser: ActivityResultLauncher<Array<String>>
     private var mDocumentChooserResultCallback: ActivityResultCallback? = null
 
-    private var mToast: Toast? = null
     private var mediaSession: MediaSessionCompat? = null
 
     private val mPlayerView: PlayerView by lazy {
@@ -63,7 +61,6 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventO
 
         // UI
         setContentView(R.layout.activity_player)
-        initMessageToast()
         updateOrientation(true)
 
         // data
@@ -193,18 +190,8 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventO
         }
     }
 
-    // Toast
-    private fun initMessageToast() {
-        mToast = Toast.makeText(this, "This totally shouldn't be seen", Toast.LENGTH_SHORT)
-        mToast?.apply { setGravity(Gravity.TOP or Gravity.CENTER_HORIZONTAL, 0, 0) }
-    }
-
     override fun showToast(msg: String, cancel: Boolean) {
-        mToast?.apply {
-            if (cancel) cancel()
-            setText(msg)
-            show()
-        }
+        ToastUtils.showToast(applicationContext, msg, Toast.LENGTH_SHORT, cancel)
     }
 
     override fun activityMoveTaskToBack(nonRoot: Boolean) {

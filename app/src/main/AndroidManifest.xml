@@ -37,7 +37,11 @@
             android:foregroundServiceType="mediaPlayback" />
         <activity
             android:name=".PlayerActivity"
+            android:autoRemoveFromRecents="true"
+            android:configChanges="orientation|screenLayout|screenSize|smallestScreenSize|keyboardHidden|keyboard|uiMode"
             android:exported="true"
+            android:launchMode="singleTask"
+            android:supportsPictureInPicture="true"
             android:theme="@style/Theme.MPV.NoActionBar">
             <intent-filter> <!-- Media protocols -->
                 <action android:name="android.intent.action.VIEW" />

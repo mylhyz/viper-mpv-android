@@ -1,6 +1,7 @@
 package io.viper.android.mpv.hud
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Build
 import android.util.AttributeSet
@@ -13,6 +14,7 @@ import androidx.annotation.IdRes
 import androidx.annotation.LayoutRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import io.viper.android.mpv.IPlayerHandler
 import io.viper.android.mpv.NativeLibrary
 import io.viper.android.mpv.OpenUrlDialog
@@ -27,6 +29,8 @@ import io.viper.android.mpv.getString
 import io.viper.android.mpv.prettyTime
 import io.viper.android.mpv.view.R
 import io.viper.android.mpv.view.databinding.HudContainerBinding
+import io.viper.android.mpv.viewGroupMove
+import io.viper.android.mpv.viewGroupReorder
 import io.viper.android.mpv.visibleChildren
 import kotlin.math.roundToInt
 
@@ -270,16 +274,13 @@ class HudContainer @JvmOverloads constructor(
 
         if (requirePlayer().vid == -1) hiddenButtons.addAll(
             arrayOf(
-                R.id.rowVideo1,
-                R.id.rowVideo2,
-                R.id.aspectBtn
+                R.id.rowVideo1, R.id.rowVideo2, R.id.aspectBtn
             )
         )
         if (requirePlayer().aid == -1 || requirePlayer().vid == -1) hiddenButtons.add(R.id.audioDelayBtn)
         if (requirePlayer().sid == -1) hiddenButtons.addAll(
             arrayOf(
-                R.id.subDelayBtn,
-                R.id.rowSubSeek
+                R.id.subDelayBtn, R.id.rowSubSeek
             )
         )
         /******/
@@ -365,10 +366,6 @@ class HudContainer @JvmOverloads constructor(
 
     private fun pickAudio() =
         selectTrack("audio", { requirePlayer().aid }, { requirePlayer().aid = it })
-
-    private fun updateSpeedButton() {
-        mBinding.cycleSpeedBtn.text = getString(R.string.ui_speed, requirePlayer().playbackSpeed)
-    }
 
     private fun pickSpeed() {
         // TODO: replace this with SliderPickerDialog
@@ -511,18 +508,138 @@ class HudContainer @JvmOverloads constructor(
         }
     }
 
+    // UI Updated
+
+    private var showMediaTitle = false
+    private var useAudioUI = false
+
+    private fun updateSpeedButton() {
+        mBinding.cycleSpeedBtn.text = getString(R.string.ui_speed, requirePlayer().playbackSpeed)
+    }
+
+    private fun updateDecoderButton() {
+        if (mBinding.cycleDecoderBtn.visibility != View.VISIBLE)
+            return
+        mBinding.cycleDecoderBtn.text = when (requirePlayer().hwdecActive) {
+            "mediacodec" -> "HW+"
+            "no" -> "SW"
+            else -> "HW"
+        }
+    }
+
+    private fun updateMetadataDisplay() {
+        val psc = requirePlayer().psc
+        if (!useAudioUI) {
+            if (showMediaTitle)
+                mBinding.fullTitleTextView.text = psc.meta.formatTitle()
+        } else {
+            mBinding.titleTextView.text = psc.meta.formatTitle()
+            mBinding.minorTitleTextView.text = psc.meta.formatArtistAlbum()
+        }
+    }
+
+    private fun updatePlaylistButtons() {
+        val psc = requirePlayer().psc
+        val plCount = psc.playlistCount
+        val plPos = psc.playlistPos
+
+        if (!useAudioUI && plCount == 1) {
+            // use View.GONE so the buttons won't take up any space
+            mBinding.prevBtn.visibility = View.GONE
+            mBinding.nextBtn.visibility = View.GONE
+            return
+        }
+        mBinding.prevBtn.visibility = View.VISIBLE
+        mBinding.nextBtn.visibility = View.VISIBLE
+
+        val g = ContextCompat.getColor(context, R.color.tint_disabled)
+        val w = ContextCompat.getColor(context, R.color.tint_normal)
+        mBinding.prevBtn.imageTintList = ColorStateList.valueOf(if (plPos == 0) g else w)
+        mBinding.nextBtn.imageTintList = ColorStateList.valueOf(if (plPos == plCount - 1) g else w)
+    }
+
+    private fun updateAudioUI() {
+        val audioButtons = arrayOf(
+            R.id.prevBtn, R.id.cycleAudioBtn, R.id.playBtn,
+            R.id.cycleSpeedBtn, R.id.nextBtn
+        )
+        val videoButtons = arrayOf(
+            R.id.cycleAudioBtn, R.id.cycleSubsBtn, R.id.playBtn,
+            R.id.cycleDecoderBtn, R.id.cycleSpeedBtn
+        )
+
+        val shouldUseAudioUI = isPlayingAudioOnly()
+        if (shouldUseAudioUI == useAudioUI)
+            return
+        useAudioUI = shouldUseAudioUI
+        Log.v(TAG, "Audio UI: $useAudioUI")
+
+        val seekbarGroup = mBinding.controlsSeekbarGroup
+        val buttonGroup = mBinding.controlsButtonGroup
+
+        if (useAudioUI) {
+            // Move prev/next file from seekbar group to buttons group
+            viewGroupMove(seekbarGroup, R.id.prevBtn, buttonGroup, 0)
+            viewGroupMove(seekbarGroup, R.id.nextBtn, buttonGroup, -1)
+
+            // Change button layout of buttons group
+            viewGroupReorder(buttonGroup, audioButtons)
+
+            // Show song title and more metadata
+            mBinding.controlsTitleGroup.visibility = View.VISIBLE
+            viewGroupReorder(
+                mBinding.controlsTitleGroup,
+                arrayOf(R.id.titleTextView, R.id.minorTitleTextView)
+            )
+            updateMetadataDisplay()
+
+            showControls()
+        } else {
+            viewGroupMove(buttonGroup, R.id.prevBtn, seekbarGroup, 0)
+            viewGroupMove(buttonGroup, R.id.nextBtn, seekbarGroup, -1)
+
+            viewGroupReorder(buttonGroup, videoButtons)
+
+            // Show title only depending on settings
+            if (showMediaTitle) {
+                mBinding.controlsTitleGroup.visibility = View.VISIBLE
+                viewGroupReorder(mBinding.controlsTitleGroup, arrayOf(R.id.fullTitleTextView))
+                updateMetadataDisplay()
+            } else {
+                mBinding.controlsTitleGroup.visibility = View.GONE
+            }
+
+            hideControls() // do NOT use fade runnable
+        }
+
+        // Visibility might have changed, so update
+        updatePlaylistButtons()
+    }
+
     private fun isPlayingAudioOnly(): Boolean {
         if (requirePlayer().aid == -1) return false
         val fmt = NativeLibrary.getPropertyString("video-format")
         return fmt.isNullOrEmpty() || arrayOf("mjpeg", "png", "bmp").indexOf(fmt) != -1
     }
 
+    private fun showControls() {}
+    private fun hideControls() {}
+
     fun resume() {
 
     }
 
     override fun eventProperty(property: String) {
+        when (property) {
+            "track-list" -> requirePlayer().loadTracks(context)
+            "video-params/aspect" -> {
+                mPlayerHandler?.updateOrientation()
+//                TODO updatePiPParams()
+            }
 
+            "video-format" -> updateAudioUI()
+            "hwdec-current" -> updateDecoderButton()
+        }
     }
 
     override fun eventProperty(property: String, value: Long) {

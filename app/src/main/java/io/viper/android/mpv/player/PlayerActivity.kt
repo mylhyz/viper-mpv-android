@@ -5,6 +5,8 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
@@ -20,6 +22,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import io.viper.android.mpv.ActivityResultCallback
 import io.viper.android.mpv.IPlayerHandler
 import io.viper.android.mpv.NativeLibrary
+import io.viper.android.mpv.core.PlaybackStateCache
 import io.viper.android.mpv.core.Player
 import io.viper.android.mpv.hud.HudContainer
 import io.viper.android.mpv.view.PlayerView
@@ -30,7 +33,6 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventO
     private var mDocumentChooserResultCallback: ActivityResultCallback? = null
 
     private var mToast: Toast? = null
-    private val psc = PlaybackStateCache()
     private var mediaSession: MediaSessionCompat? = null
 
     private val mPlayerView: PlayerView by lazy {
@@ -42,6 +44,11 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventO
     private val mPlayer: Player by lazy {
         mPlayerView.getAsPlayer()
     }
+
+    private var mHudContainerEventObserverDelegate: HandlerEventObserver? = null
+
+    private val psc: PlaybackStateCache
+        get() = mPlayer.psc
 
     private var autoRotationMode = "auto"
 
@@ -80,7 +87,9 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventO
         mPlayer.playFile(filepath)
         // register event observer
         NativeLibrary.addEventObserver(mPlayer)
-        NativeLibrary.addEventObserver(mHudContainer)
+        mHudContainerEventObserverDelegate =
+            HandlerEventObserver(mHudContainer, Handler(Looper.getMainLooper()))
+        NativeLibrary.addEventObserver(mHudContainerEventObserverDelegate!!)
         NativeLibrary.addEventObserver(this)
 
         mediaSession = initMediaSession()
@@ -101,7 +110,7 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventO
         super.onDestroy()
         // unregister event observer
         NativeLibrary.removeEventObserver(this)
-        NativeLibrary.removeEventObserver(mHudContainer)
+        mHudContainerEventObserverDelegate?.let { NativeLibrary.removeEventObserver(it) }
         NativeLibrary.removeEventObserver(mPlayer)
     }
 
@@ -235,7 +244,7 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventO
         finish()
     }
 
-    private fun updateOrientation(initial: Boolean = false) {
+    override fun updateOrientation(initial: Boolean) {
         if (autoRotationMode != "auto") {
             if (!initial) return // don't reset at runtime
             requestedOrientation = when (autoRotationMode) {
@@ -316,23 +325,44 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventO
     // Event Observer
 
     override fun eventProperty(property: String) {
-
+        if (property == "loop-file" || property == "loop-playlist") {
+            mediaSession?.setRepeatMode(
+                when (mPlayer.getRepeat()) {
+                    2 -> PlaybackStateCompat.REPEAT_MODE_ONE
+                    1 -> PlaybackStateCompat.REPEAT_MODE_ALL
+                    else -> PlaybackStateCompat.REPEAT_MODE_NONE
+                }
+            )
+        }
     }
 
     override fun eventProperty(property: String, value: Long) {
-
+        if (psc.update(property, value))
+            updateMediaSession()
     }
 
     override fun eventProperty(property: String, value: Boolean) {
-
+        if (psc.update(property, value))
+            updateMediaSession()
+        if (property == "shuffle") {
+            mediaSession?.setShuffleMode(
+                if (value)
+                    PlaybackStateCompat.SHUFFLE_MODE_ALL
+                else
+                    PlaybackStateCompat.SHUFFLE_MODE_NONE
+            )
+        }
     }
 
     override fun eventProperty(property: String, value: String) {
-
+        val triggerMetaUpdate = psc.update(property, value)
+        if (triggerMetaUpdate)
+            updateMediaSession()
     }
 
     override fun event(evtId: Int) {
-
+        if (evtId == NativeLibrary.EventId.MPV_EVENT_SHUTDOWN)
+            finishWithResult(if (mPlayer.playbackHasStarted) RESULT_OK else RESULT_CANCELED)
     }
 
     companion object {

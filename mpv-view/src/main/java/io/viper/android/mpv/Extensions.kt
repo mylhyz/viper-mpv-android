@@ -84,7 +84,34 @@ fun prettyTime(d: Int, sign: Boolean = false): String {
     return "%d:%02d:%02d".format(hours, minutes, seconds)
 }
 
+fun viewGroupMove(from: ViewGroup, id: Int, to: ViewGroup, toIndex: Int) {
+    val view: View? = (0 until from.childCount)
+        .map { from.getChildAt(it) }.firstOrNull { it.id == id }
+    if (view == null)
+        error("$from does not have child with id=$id")
+    from.removeView(view)
+    to.addView(view, if (toIndex >= 0) toIndex else (to.childCount + 1 + toIndex))
+}
 
+fun viewGroupReorder(group: ViewGroup, idOrder: Array<Int>) {
+    val m = mutableMapOf<Int, View>()
+    for (i in 0 until group.childCount) {
+        val c = group.getChildAt(i)
+        m[c.id] = c
+    }
+    group.removeAllViews()
+    // Readd children in specified order and unhide
+    for (id in idOrder) {
+        val c = m.remove(id) ?: error("$group did not have child with id=$id")
+        c.visibility = View.VISIBLE
+        group.addView(c)
+    }
+    // Keep unspecified children but hide them
+    for (c in m.values) {
+        c.visibility = View.GONE
+        group.addView(c)
+    }
+}
 
 class OpenUrlDialog(context: Context) {
     private val editText = EditText(context)

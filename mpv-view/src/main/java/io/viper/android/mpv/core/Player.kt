@@ -15,7 +15,8 @@ class Player : NativeLibrary.EventObserver {
     private var filePath: String? = null
     private var voInUse: String = ""
 
-    private var playbackHasStarted = false
+    var playbackHasStarted = false
+    val psc = PlaybackStateCache()
     val onloadCommands = mutableListOf<Array<String?>>()
 
     // 暴露给外部
@@ -30,7 +31,7 @@ class Player : NativeLibrary.EventObserver {
         "audio" to arrayListOf(), "video" to arrayListOf(), "sub" to arrayListOf()
     )
 
-    private fun loadTracks(context: Context) {
+    fun loadTracks(context: Context) {
         for (list in tracks.values) {
             list.clear()
             // pseudo-track to allow disabling audio/subs

@@ -12,4 +12,5 @@ interface IPlayerHandler {
         callback: ActivityResultCallback
     )
     fun cycleOrientation()
+    fun updateOrientation(initial: Boolean = false)
 }

@@ -26,6 +26,7 @@
     <string name="ui_track">#%d</string>
     <string name="ui_track_text">#%1$d: %2$s</string>
     <string name="ui_track_title_lang">#%1$d: %2$s (%3$s)</string>
+    <string name="ui_fps">%.3f FPS</string>
 
     <string name="title_speed_dialog">Playback speed</string>
 

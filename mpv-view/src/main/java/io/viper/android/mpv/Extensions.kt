@@ -54,7 +54,8 @@ fun View.getString(@StringRes resId: Int): String {
 }
 
 fun View.getString(@StringRes resId: Int, vararg formatArgs: Any?): String {
-    return context.getString(resId, formatArgs)
+    // 这里需要注意一点，在kotlin中声明的可变参数不能直接传递给java层，而是需要使用*来展开
+    return context.getString(resId, *formatArgs)
 }
 
 fun fileBasename(str: String): String {

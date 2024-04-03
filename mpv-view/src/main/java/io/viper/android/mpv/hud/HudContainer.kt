@@ -1,6 +1,7 @@
 package io.viper.android.mpv.hud
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.net.Uri
@@ -50,7 +51,7 @@ class HudContainer @JvmOverloads constructor(
         HudContainerBinding.inflate(LayoutInflater.from(context), this)
 
     /* Settings */
-//    private var statsFPS = false
+    private var statsFPS = false
 //    private var statsLuaMode = 0 // ==0 disabled, >0 page number
     private var backgroundPlayMode = ""
     private var noUIPauseMode = ""
@@ -62,12 +63,16 @@ class HudContainer @JvmOverloads constructor(
 //    private var ignoreAudioFocus = false
 //    private var smoothSeekGesture = false
 
+    /* gesture */
+    private var userIsOperatingSeekbar = false
+
+    /* internal props */
     var mPlayer: Player? = null
     var mPlayerHandler: IPlayerHandler? = null
 
     init {
-        initWithListener()
         syncSettings()
+        initWithListener()
     }
 
     data class TrackData(val trackId: Int, val trackType: String)
@@ -165,6 +170,14 @@ class HudContainer @JvmOverloads constructor(
             }
             WindowInsetsCompat.CONSUMED
         }
+
+        // 系统支持判断
+        if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)) mBinding.topPiPBtn.visibility =
+            View.GONE
+        if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)) mBinding.topLockBtn.visibility =
+            View.GONE
+
+        if (showMediaTitle) mBinding.controlsTitleGroup.visibility = View.VISIBLE
     }
 
     private fun syncSettings() {
@@ -174,8 +187,8 @@ class HudContainer @JvmOverloads constructor(
             prefs.getString(key, resources.getString(defaultRes))!!
         }
 
-//        val statsMode = prefs.getString("stats_mode", "") ?: ""
-//        this.statsFPS = statsMode == "native_fps"
+        val statsMode = prefs.getString("stats_mode", "") ?: ""
+        this.statsFPS = statsMode == "native_fps"
 //        this.statsLuaMode = if (statsMode.startsWith("lua")) statsMode.removePrefix("lua").toInt()
 //        else 0
         this.backgroundPlayMode =
@@ -565,6 +578,33 @@ class HudContainer @JvmOverloads constructor(
 
     private var useAudioUI = false
 
+    private fun updateStats() {
+        if (!statsFPS)
+            return
+        mBinding.statsTextView.text = getString(R.string.ui_fps, requirePlayer().estimatedVfFps)
+    }
+
+    private fun updatePlaybackStatus(paused: Boolean) {
+        val r = if (paused) R.drawable.ic_play_arrow_black_24dp else R.drawable.ic_pause_black_24dp
+        mBinding.playBtn.setImageResource(r)
+    }
+
+    private fun updatePlaybackDuration(duration: Int) {
+        mBinding.playbackDurationTxt.text = prettyTime(duration)
+        if (!userIsOperatingSeekbar)
+            mBinding.playbackSeekbar.max = duration
+    }
+
+    fun updatePlaybackPos(position: Int) {
+        mBinding.playbackPositionTxt.text = prettyTime(position)
+        if (!userIsOperatingSeekbar)
+            mBinding.playbackSeekbar.progress = position
+
+        updateDecoderButton()
+        updateSpeedButton()
+        updateStats()
+    }
+
     private fun updateSpeedButton() {
         mBinding.cycleSpeedBtn.text = getString(R.string.ui_speed, requirePlayer().playbackSpeed)
     }
@@ -712,11 +752,17 @@ class HudContainer @JvmOverloads constructor(
     }
 
     override fun eventProperty(property: String, value: Long) {
-
+        when (property) {
+            "time-pos" -> updatePlaybackPos(value.toInt())
+            "duration" -> updatePlaybackDuration(value.toInt())
+            "playlist-pos", "playlist-count" -> updatePlaylistButtons()
+        }
     }
 
     override fun eventProperty(property: String, value: Boolean) {
-
+        when (property) {
+            "pause" -> updatePlaybackStatus(value)
+        }
     }
 
     override fun eventProperty(property: String, value: String) {
@@ -724,7 +770,9 @@ class HudContainer @JvmOverloads constructor(
     }
 
     override fun event(evtId: Int) {
-
+        when (evtId) {
+            NativeLibrary.EventId.MPV_EVENT_PLAYBACK_RESTART -> updatePlaybackStatus(requirePlayer().paused!!)
+        }
     }
 
     companion object {

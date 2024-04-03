@@ -99,6 +99,8 @@ class Player : NativeLibrary.EventObserver {
     var timePos: Int?
         get() = NativeLibrary.getPropertyInt("time-pos")
         set(progress) = NativeLibrary.setPropertyInt("time-pos", progress!!)
+    val estimatedVfFps: Double?
+        get() = NativeLibrary.getPropertyDouble("estimated-vf-fps")
 
     fun getShuffle(): Boolean {
         return NativeLibrary.getPropertyBoolean("shuffle")!!

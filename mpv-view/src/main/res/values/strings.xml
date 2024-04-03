@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="pref_video_interpolation_sync_default" translatable="false">audio</string>
+    <string name="pref_background_play_default" translatable="false">never</string>
+    <string name="pref_no_ui_pause_default" translatable="false">audio-only</string>
+    <string name="pref_auto_rotation_default" translatable="false">auto</string>
 
     <string name="track_audio">Audio</string>
     <string name="track_subs">Subs</string> <!-- short for "Subtitles" -->

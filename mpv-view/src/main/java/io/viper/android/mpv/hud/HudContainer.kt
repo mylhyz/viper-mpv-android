@@ -2,8 +2,10 @@ package io.viper.android.mpv.hud
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
+import android.preference.PreferenceManager
 import android.util.AttributeSet
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,9 +17,13 @@ import androidx.annotation.LayoutRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updateLayoutParams
 import io.viper.android.mpv.IPlayerHandler
 import io.viper.android.mpv.NativeLibrary
 import io.viper.android.mpv.OpenUrlDialog
+import io.viper.android.mpv.convertDp
 import io.viper.android.mpv.core.Player
 import io.viper.android.mpv.dialog.DecimalPickerDialog
 import io.viper.android.mpv.dialog.IPickerDialog
@@ -43,15 +49,25 @@ class HudContainer @JvmOverloads constructor(
     private val mBinding: HudContainerBinding =
         HudContainerBinding.inflate(LayoutInflater.from(context), this)
 
-    private var noUIPauseMode = ""
+    /* Settings */
+//    private var statsFPS = false
+//    private var statsLuaMode = 0 // ==0 disabled, >0 page number
     private var backgroundPlayMode = ""
+    private var noUIPauseMode = ""
+
+    //    private var shouldSavePosition = false
     private var autoRotationMode = ""
+    private var controlsAtBottom = true
+    private var showMediaTitle = false
+//    private var ignoreAudioFocus = false
+//    private var smoothSeekGesture = false
 
     var mPlayer: Player? = null
     var mPlayerHandler: IPlayerHandler? = null
 
     init {
         initWithListener()
+        syncSettings()
     }
 
     data class TrackData(val trackId: Int, val trackType: String)
@@ -134,6 +150,43 @@ class HudContainer @JvmOverloads constructor(
             nextBtn.setOnLongClickListener { openPlaylistMenu(pauseForDialog()); true }
             cycleDecoderBtn.setOnLongClickListener { pickDecoder(); true }
         }
+
+        // 将所有的Control置于系统的导航栏等之外，避免重合
+        ViewCompat.setOnApplyWindowInsetsListener(mBinding.outside) { _, windowInsets ->
+            // guidance: https://medium.com/androiddevelopers/gesture-navigation-handling-visual-overlaps-4aed565c134c
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val insets2 = windowInsets.getInsets(WindowInsetsCompat.Type.displayCutout())
+            mBinding.outside.updateLayoutParams<MarginLayoutParams> {
+                // avoid system bars and cutout
+                leftMargin = Math.max(insets.left, insets2.left)
+                topMargin = Math.max(insets.top, insets2.top)
+                bottomMargin = Math.max(insets.bottom, insets2.bottom)
+                rightMargin = Math.max(insets.right, insets2.right)
+            }
+            WindowInsetsCompat.CONSUMED
+        }
+    }
+
+    private fun syncSettings() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+
+        val getString: (String, Int) -> String = { key, defaultRes ->
+            prefs.getString(key, resources.getString(defaultRes))!!
+        }
+
+//        val statsMode = prefs.getString("stats_mode", "") ?: ""
+//        this.statsFPS = statsMode == "native_fps"
+//        this.statsLuaMode = if (statsMode.startsWith("lua")) statsMode.removePrefix("lua").toInt()
+//        else 0
+        this.backgroundPlayMode =
+            getString("background_play", R.string.pref_background_play_default)
+        this.noUIPauseMode = getString("no_ui_pause", R.string.pref_no_ui_pause_default)
+//        this.shouldSavePosition = prefs.getBoolean("save_position", false)
+        this.autoRotationMode = getString("auto_rotation", R.string.pref_auto_rotation_default)
+        this.controlsAtBottom = prefs.getBoolean("bottom_controls", true)
+        this.showMediaTitle = prefs.getBoolean("display_media_title", false)
+//        this.ignoreAudioFocus = prefs.getBoolean("ignore_audio_focus", false)
+//        this.smoothSeekGesture = prefs.getBoolean("seek_gesture_smooth", false)
     }
 
     private fun requirePlayer(): Player {
@@ -510,7 +563,6 @@ class HudContainer @JvmOverloads constructor(
 
     // UI Updated
 
-    private var showMediaTitle = false
     private var useAudioUI = false
 
     private fun updateSpeedButton() {
@@ -518,8 +570,7 @@ class HudContainer @JvmOverloads constructor(
     }
 
     private fun updateDecoderButton() {
-        if (mBinding.cycleDecoderBtn.visibility != View.VISIBLE)
-            return
+        if (mBinding.cycleDecoderBtn.visibility != View.VISIBLE) return
         mBinding.cycleDecoderBtn.text = when (requirePlayer().hwdecActive) {
             "mediacodec" -> "HW+"
             "no" -> "SW"
@@ -530,8 +581,7 @@ class HudContainer @JvmOverloads constructor(
     private fun updateMetadataDisplay() {
         val psc = requirePlayer().psc
         if (!useAudioUI) {
-            if (showMediaTitle)
-                mBinding.fullTitleTextView.text = psc.meta.formatTitle()
+            if (showMediaTitle) mBinding.fullTitleTextView.text = psc.meta.formatTitle()
         } else {
             mBinding.titleTextView.text = psc.meta.formatTitle()
             mBinding.minorTitleTextView.text = psc.meta.formatArtistAlbum()
@@ -560,17 +610,18 @@ class HudContainer @JvmOverloads constructor(
 
     private fun updateAudioUI() {
         val audioButtons = arrayOf(
-            R.id.prevBtn, R.id.cycleAudioBtn, R.id.playBtn,
-            R.id.cycleSpeedBtn, R.id.nextBtn
+            R.id.prevBtn, R.id.cycleAudioBtn, R.id.playBtn, R.id.cycleSpeedBtn, R.id.nextBtn
         )
         val videoButtons = arrayOf(
-            R.id.cycleAudioBtn, R.id.cycleSubsBtn, R.id.playBtn,
-            R.id.cycleDecoderBtn, R.id.cycleSpeedBtn
+            R.id.cycleAudioBtn,
+            R.id.cycleSubsBtn,
+            R.id.playBtn,
+            R.id.cycleDecoderBtn,
+            R.id.cycleSpeedBtn
         )
 
         val shouldUseAudioUI = isPlayingAudioOnly()
-        if (shouldUseAudioUI == useAudioUI)
-            return
+        if (shouldUseAudioUI == useAudioUI) return
         useAudioUI = shouldUseAudioUI
         Log.v(TAG, "Audio UI: $useAudioUI")
 
@@ -588,8 +639,7 @@ class HudContainer @JvmOverloads constructor(
             // Show song title and more metadata
             mBinding.controlsTitleGroup.visibility = View.VISIBLE
             viewGroupReorder(
-                mBinding.controlsTitleGroup,
-                arrayOf(R.id.titleTextView, R.id.minorTitleTextView)
+                mBinding.controlsTitleGroup, arrayOf(R.id.titleTextView, R.id.minorTitleTextView)
             )
             updateMetadataDisplay()
 
@@ -627,6 +677,25 @@ class HudContainer @JvmOverloads constructor(
 
     fun resume() {
 
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val isLandscape = newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE
+        // Adjust control margins
+        mBinding.controls.updateLayoutParams<MarginLayoutParams> {
+            bottomMargin = if (!controlsAtBottom) {
+                context.convertDp(60f)
+            } else {
+                0
+            }
+            leftMargin = if (!controlsAtBottom) {
+                context.convertDp(if (isLandscape) 60f else 24f)
+            } else {
+                0
+            }
+            rightMargin = leftMargin
+        }
     }
 
     override fun eventProperty(property: String) {

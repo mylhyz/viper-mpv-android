@@ -3,6 +3,7 @@ package io.viper.android.mpv
 import android.content.Context
 import android.net.Uri
 import android.text.InputType
+import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
@@ -111,6 +112,13 @@ fun viewGroupReorder(group: ViewGroup, idOrder: Array<Int>) {
         c.visibility = View.GONE
         group.addView(c)
     }
+}
+
+fun Context.convertDp(dp: Float): Int {
+    return TypedValue.applyDimension(
+        TypedValue.COMPLEX_UNIT_DIP, dp,
+        resources.displayMetrics
+    ).toInt()
 }
 
 class OpenUrlDialog(context: Context) {

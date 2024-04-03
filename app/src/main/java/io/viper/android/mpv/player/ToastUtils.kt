@@ -9,11 +9,10 @@ object ToastUtils {
 
     private var mToast: Toast? = null
     fun showToast(context: Context, message: String, duration: Int, cancel: Boolean = false) {
-        if (null == mToast) {
-            mToast = Toast(context)
-        } else {
-            if (cancel) mToast!!.cancel()
+        if (cancel && mToast != null) {
+            mToast!!.cancel()
         }
+        mToast = Toast(context)
         mToast?.let {
             //可以是其他自定义布局
             val rootView = LayoutInflater.from(context).inflate(R.layout.toast_view, null, false)

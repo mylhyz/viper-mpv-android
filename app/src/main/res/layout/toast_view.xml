@@ -19,7 +19,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
+        android:layout_marginEnd="8dp"
         android:textSize="12sp"
-        android:layout_marginEnd="4dp"
+        android:textStyle="bold"
         tools:text="Sample Toast Text" />
 </LinearLayout>

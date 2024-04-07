@@ -55,19 +55,19 @@ class NativeLibrary {
         external fun getPropertyInt(property: String): Int?
 
         @JvmStatic
-        external fun setPropertyInt(property: String, value: Int)
+        external fun setPropertyInt(property: String, value: Int?)
 
         @JvmStatic
         external fun getPropertyDouble(property: String): Double?
 
         @JvmStatic
-        external fun setPropertyDouble(property: String, value: Double)
+        external fun setPropertyDouble(property: String, value: Double?)
 
         @JvmStatic
         external fun getPropertyBoolean(property: String): Boolean?
 
         @JvmStatic
-        external fun setPropertyBoolean(property: String, value: Boolean)
+        external fun setPropertyBoolean(property: String, value: Boolean?)
 
         @JvmStatic
         external fun getPropertyString(property: String): String?

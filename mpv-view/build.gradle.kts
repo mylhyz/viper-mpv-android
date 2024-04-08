@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+    implementation(libs.androidx.preference.ktx)
 
     extractNativeLibs("com.viper.android.mpv:native-libs:0.0.1-SNAPSHOT")
 

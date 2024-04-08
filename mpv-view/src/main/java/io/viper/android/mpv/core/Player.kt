@@ -3,10 +3,10 @@ package io.viper.android.mpv.core
 import android.content.Context
 import android.os.Build
 import android.os.Environment
-import android.preference.PreferenceManager
 import android.util.Log
 import android.view.SurfaceHolder
 import android.view.WindowManager
+import androidx.preference.PreferenceManager
 import io.viper.android.mpv.NativeLibrary
 import io.viper.android.mpv.view.R
 
@@ -355,7 +355,11 @@ class Player : NativeLibrary.EventObserver {
 
     private fun observeProperties() {
         // This observes all properties needed by MPVView, MPVActivity or other classes
-        data class Property(val name: String, val format: Int = NativeLibrary.Format.MPV_FORMAT_NONE)
+        data class Property(
+            val name: String,
+            val format: Int = NativeLibrary.Format.MPV_FORMAT_NONE
+        )
+
         val p = arrayOf(
             Property("time-pos", NativeLibrary.Format.MPV_FORMAT_INT64),
             Property("duration", NativeLibrary.Format.MPV_FORMAT_INT64),

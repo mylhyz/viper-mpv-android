@@ -6,7 +6,6 @@ import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
-import android.preference.PreferenceManager
 import android.util.AttributeSet
 import android.util.Log
 import android.view.LayoutInflater
@@ -21,6 +20,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
+import androidx.preference.PreferenceManager
 import io.viper.android.mpv.IPlayerHandler
 import io.viper.android.mpv.NativeLibrary
 import io.viper.android.mpv.OpenUrlDialog
@@ -52,7 +52,8 @@ class HudContainer @JvmOverloads constructor(
 
     /* Settings */
     private var statsFPS = false
-//    private var statsLuaMode = 0 // ==0 disabled, >0 page number
+
+    //    private var statsLuaMode = 0 // ==0 disabled, >0 page number
     private var backgroundPlayMode = ""
     private var noUIPauseMode = ""
 

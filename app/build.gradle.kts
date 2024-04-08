@@ -17,6 +17,10 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    buildFeatures {
+        buildConfig = true // 默认不再生成buildConfig类，需要手动开启
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false

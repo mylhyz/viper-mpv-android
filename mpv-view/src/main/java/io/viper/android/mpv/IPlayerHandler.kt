@@ -11,6 +11,10 @@ interface IPlayerHandler {
     fun openFilePickerFor(
         callback: ActivityResultCallback
     )
+
     fun cycleOrientation()
     fun updateOrientation(initial: Boolean = false)
+    fun updatePictureInPictureParams(force: Boolean = false)
+    fun getIntoPictureInPictureMode()
+    fun updateKeepScreenOn(paused: Boolean)
 }

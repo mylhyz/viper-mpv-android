@@ -1,9 +1,14 @@
 package io.viper.android.mpv.player
 
+import android.app.PictureInPictureParams
+import android.app.RemoteAction
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.content.res.Configuration
+import android.graphics.drawable.Icon
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -11,6 +16,8 @@ import android.os.ParcelFileDescriptor
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import android.util.Rational
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
@@ -25,6 +32,7 @@ import io.viper.android.mpv.core.PlaybackStateCache
 import io.viper.android.mpv.core.Player
 import io.viper.android.mpv.hud.HudContainer
 import io.viper.android.mpv.view.PlayerView
+import java.lang.IllegalArgumentException
 
 class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventObserver {
 
@@ -252,6 +260,78 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventO
         }
         requestedOrientation = if (ratio > 1f) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         else ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+    }
+
+    // PictureInPictureMode
+    override fun updatePictureInPictureParams(force: Boolean) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
+            return
+        if (!isInPictureInPictureMode && !force)
+            return
+        val intent1 = NotificationButtonReceiver.createIntent(this, "PLAY_PAUSE")
+        val action1 = if (psc.pause) {
+            RemoteAction(
+                Icon.createWithResource(
+                    this,
+                    io.viper.android.mpv.view.R.drawable.ic_play_arrow_black_24dp
+                ),
+                "Play", "", intent1
+            )
+        } else {
+            RemoteAction(
+                Icon.createWithResource(
+                    this,
+                    io.viper.android.mpv.view.R.drawable.ic_pause_black_24dp
+                ),
+                "Pause", "", intent1
+            )
+        }
+
+        val params = with(PictureInPictureParams.Builder()) {
+            val aspect = mPlayer.videoAspect ?: 1.0
+            setAspectRatio(Rational(aspect.times(10000).toInt(), 10000))
+            setActions(listOf(action1))
+        }
+        try {
+            setPictureInPictureParams(params.build())
+        } catch (e: IllegalArgumentException) {
+            // Android has some limits of what the aspect ratio can be
+            params.setAspectRatio(Rational(1, 1))
+            setPictureInPictureParams(params.build())
+        }
+    }
+
+    override fun getIntoPictureInPictureMode() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
+        updatePictureInPictureParams(true)
+        enterPictureInPictureMode()
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode)
+        Log.v(TAG, "onPiPModeChanged($isInPictureInPictureMode)")
+        // TODO
+//        if (isInPictureInPictureMode) {
+//            lockedUI = true
+//            hideControls()
+//            return
+//        }
+//
+//        unlockUI()
+//        // For whatever stupid reason Android provides no good detection for when PiP is exited
+//        // so we have to do this shit (https://stackoverflow.com/questions/43174507/#answer-56127742)
+//        if (activityIsStopped) {
+//            // audio-only detection doesn't work in this situation, I don't care to fix this:
+//            this.backgroundPlayMode = "never"
+//            onPauseImpl() // behave as if the app normally went into background
+//        }
+    }
+
+    override fun updateKeepScreenOn(paused: Boolean) {
+        if (paused)
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        else
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     // Media Session handling

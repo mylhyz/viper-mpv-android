@@ -35,6 +35,15 @@
             android:name=".BackgroundPlaybackService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
+        <receiver
+            android:name=".NotificationButtonReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="io.viper.android.mpv.player.PLAY_PAUSE" />
+                <action android:name="io.viper.android.mpv.player.ACTION_PREV" />
+                <action android:name="io.viper.android.mpv.player.ACTION_NEXT" />
+            </intent-filter>
+        </receiver>
         <activity
             android:name=".PlayerActivity"
             android:autoRemoveFromRecents="true"

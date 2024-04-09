@@ -268,10 +268,7 @@ class HudContainer @JvmOverloads constructor(
     }
 
     private fun goIntoPiP() {
-        // TODO
-//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
-//        updatePiPParams(true)
-//        enterPictureInPictureMode()
+        mPlayerHandler?.getIntoPictureInPictureMode()
     }
 
     private fun openAdvancedMenu(restoreState: StateRestoreCallback) {
@@ -588,6 +585,9 @@ class HudContainer @JvmOverloads constructor(
     private fun updatePlaybackStatus(paused: Boolean) {
         val r = if (paused) R.drawable.ic_play_arrow_black_24dp else R.drawable.ic_pause_black_24dp
         mBinding.playBtn.setImageResource(r)
+
+        mPlayerHandler?.updatePictureInPictureParams()
+        mPlayerHandler?.updateKeepScreenOn(paused)
     }
 
     private fun updatePlaybackDuration(duration: Int) {

@@ -54,10 +54,10 @@ class HudContainer @JvmOverloads constructor(
     private var statsFPS = false
 
     //    private var statsLuaMode = 0 // ==0 disabled, >0 page number
-    private var backgroundPlayMode = ""
+    var backgroundPlayMode = ""
     private var noUIPauseMode = ""
 
-    //    private var shouldSavePosition = false
+    var shouldSavePosition = false
     private var autoRotationMode = ""
     private var controlsAtBottom = true
     private var showMediaTitle = false
@@ -195,7 +195,7 @@ class HudContainer @JvmOverloads constructor(
         this.backgroundPlayMode =
             getString("background_play", R.string.pref_background_play_default)
         this.noUIPauseMode = getString("no_ui_pause", R.string.pref_no_ui_pause_default)
-//        this.shouldSavePosition = prefs.getBoolean("save_position", false)
+        this.shouldSavePosition = prefs.getBoolean("save_position", false)
         this.autoRotationMode = getString("auto_rotation", R.string.pref_auto_rotation_default)
         this.controlsAtBottom = prefs.getBoolean("bottom_controls", true)
         this.showMediaTitle = prefs.getBoolean("display_media_title", false)
@@ -707,7 +707,7 @@ class HudContainer @JvmOverloads constructor(
         updatePlaylistButtons()
     }
 
-    private fun isPlayingAudioOnly(): Boolean {
+    fun isPlayingAudioOnly(): Boolean {
         if (requirePlayer().aid == -1) return false
         val fmt = NativeLibrary.getPropertyString("video-format")
         return fmt.isNullOrEmpty() || arrayOf("mjpeg", "png", "bmp").indexOf(fmt) != -1

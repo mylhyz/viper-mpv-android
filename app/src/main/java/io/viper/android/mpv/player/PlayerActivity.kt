@@ -5,7 +5,6 @@ import android.app.RemoteAction
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.ActivityInfo
-import android.content.res.Configuration
 import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
@@ -32,7 +31,6 @@ import io.viper.android.mpv.core.PlaybackStateCache
 import io.viper.android.mpv.core.Player
 import io.viper.android.mpv.hud.HudContainer
 import io.viper.android.mpv.view.PlayerView
-import java.lang.IllegalArgumentException
 
 class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventObserver {
 
@@ -57,6 +55,9 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventO
         get() = mPlayer.psc
 
     private var autoRotationMode = "auto"
+
+    private var activityIsForeground = true
+    private var didResumeBackgroundPlayback = false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -97,7 +98,10 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventO
         NativeLibrary.addEventObserver(mHudContainerEventObserverDelegate!!)
         NativeLibrary.addEventObserver(this)
 
+        BackgroundPlaybackService.createNotificationChannel(this)
         mediaSession = initMediaSession()
+        updateMediaSession()
+        BackgroundPlaybackService.mediaToken = mediaSession?.sessionToken
 
         mDocumentChooser = registerForActivityResult(ActivityResultContracts.OpenDocument()) {
             mDocumentChooserResultCallback?.invoke(it)
@@ -107,12 +111,23 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventO
 
     override fun onResume() {
         super.onResume()
+        if (activityIsForeground) {
+            return
+        }
+        activityIsForeground = true
         mHudContainer.resume()
         mPlayer.resume(this)
     }
 
+    override fun onPause() {
+        super.onPause()
+
+        onPauseImpl()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        activityIsForeground = false
         // unregister event observer
         NativeLibrary.removeEventObserver(this)
         mHudContainerEventObserverDelegate?.let { NativeLibrary.removeEventObserver(it) }
@@ -388,6 +403,60 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventO
         }
     }
 
+    private fun shouldBackground(): Boolean {
+        if (isFinishing) // about to exit?
+            return false
+        return when (mHudContainer.backgroundPlayMode) {
+            "always" -> true
+            "audio-only" -> mHudContainer.isPlayingAudioOnly()
+            else -> false // "never"
+        }
+    }
+
+    private fun onPauseImpl() {
+        val fmt = NativeLibrary.getPropertyString("video-format")
+        val shouldBackground = shouldBackground()
+        if (shouldBackground && !fmt.isNullOrEmpty())
+            BackgroundPlaybackService.thumbnail = NativeLibrary.grabThumbnail(THUMB_SIZE)
+        else
+            BackgroundPlaybackService.thumbnail = null
+        // media session uses the same thumbnail
+        updateMediaSession()
+
+        activityIsForeground = false
+//        eventUiHandler.removeCallbacksAndMessages(null) TODO
+        if (isFinishing) {
+            savePosition()
+            // tell mpv to shut down so that any other property changes or such are ignored,
+            // preventing useless busywork
+            NativeLibrary.command(arrayOf("stop"))
+        } else if (!shouldBackground) {
+            mPlayer.paused = true
+        }
+        super.onPause()
+
+        didResumeBackgroundPlayback = shouldBackground
+        if (shouldBackground) {
+            Log.v(TAG, "Resuming playback in background")
+//            stopServiceHandler.removeCallbacks(stopServiceRunnable) TODO
+            val serviceIntent = Intent(this, BackgroundPlaybackService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                startForegroundService(serviceIntent)
+            else
+                startService(serviceIntent)
+        }
+    }
+
+    private fun savePosition() {
+        if (!mHudContainer.shouldSavePosition)
+            return
+        if (NativeLibrary.getPropertyBoolean("eof-reached") != false) {
+            Log.d(TAG, "player indicates EOF, not saving watch-later config")
+            return
+        }
+        NativeLibrary.command(arrayOf("write-watch-later-config"))
+    }
+
 
     // Event Observer
 
@@ -435,7 +504,11 @@ class PlayerActivity : AppCompatActivity(), IPlayerHandler, NativeLibrary.EventO
     companion object {
         private const val TAG = "mpv.PlayerActivity"
 
+        // smallest aspect ratio that is considered non-square
         private const val ASPECT_RATIO_MIN = 1.2f // covers 5:4 and up
+
+        // resolution (px) of the thumbnail displayed with playback notification
+        private const val THUMB_SIZE = 384
 
         // action of result intent
         private const val RESULT_INTENT = "io.viper.android.mpv.player.PlayerActivity.result"

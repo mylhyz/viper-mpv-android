@@ -60,4 +60,23 @@
     <string name="sub_delay">Subtitle delay</string>
     <string name="aspect_ratio">Aspect ratio</string>
 
+
+    <string name="pref_gesture_horizontal_title">Horizontal drag</string>
+    <string name="pref_gesture_horizontal_default" translatable="false">seek</string>
+
+    <string name="pref_gesture_vert_left_title">Vertical drag (left side)</string>
+    <string name="pref_gesture_vert_left_default" translatable="false">bright</string>
+
+    <string name="pref_gesture_vert_right_title">Vertical drag (right side)</string>
+    <string name="pref_gesture_vert_right_default" translatable="false">volume</string>
+
+    <string name="pref_gesture_tap_left_title">Double tap (left)</string>
+    <string name="pref_gesture_tap_left_default" translatable="false">none</string>
+
+    <string name="pref_gesture_tap_center_title">Double tap (center)</string>
+    <string name="pref_gesture_tap_center_default" translatable="false">none</string>
+
+    <string name="pref_gesture_tap_right_title">Double tap (right)</string>
+    <string name="pref_gesture_tap_right_default" translatable="false">none</string>
+
 </resources>

@@ -7,7 +7,6 @@ import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
-import android.text.method.Touch
 import android.util.AttributeSet
 import android.util.DisplayMetrics
 import android.util.Log
@@ -27,7 +26,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.preference.PreferenceManager
-import androidx.recyclerview.widget.ItemTouchHelper
 import io.viper.android.mpv.IPlayerHandler
 import io.viper.android.mpv.NativeLibrary
 import io.viper.android.mpv.OpenUrlDialog
@@ -52,7 +50,7 @@ typealias StateRestoreCallback = () -> Unit
 
 class HudContainer @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
-) : FrameLayout(context, attrs, defStyleAttr), NativeLibrary.EventObserver, TouchGesturesObserver {
+) : FrameLayout(context, attrs, defStyleAttr), NativeLibrary.EventObserver {
 
     private val mBinding: HudContainerBinding =
         HudContainerBinding.inflate(LayoutInflater.from(context), this)
@@ -77,7 +75,7 @@ class HudContainer @JvmOverloads constructor(
     /* internal props */
     var mPlayer: Player? = null
     var mPlayerHandler: IPlayerHandler? = null
-    private var mGestureDelegate = GestureDelegate(this)
+    private var mGestureDelegate = GestureDelegate()
 
     init {
         syncSettings()
@@ -735,10 +733,6 @@ class HudContainer @JvmOverloads constructor(
         return mGestureDelegate.onTouchEvent(event)
     }
 
-    override fun onPropertyChange(p: PropertyChange, diff: Float) {
-        Log.i(TAG, "onPropertyChange ${p} ${diff}")
-    }
-
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         val isLandscape = newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -761,7 +755,6 @@ class HudContainer @JvmOverloads constructor(
         val dm = DisplayMetrics()
         context.getSystemService<WindowManager>()?.apply {
             defaultDisplay.getRealMetrics(dm)
-            mGestureDelegate.setMetrics(dm.widthPixels.toFloat(), dm.heightPixels.toFloat())
         }
     }
 

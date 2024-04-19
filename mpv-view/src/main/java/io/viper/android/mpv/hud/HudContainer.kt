@@ -7,12 +7,14 @@ import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
+import android.text.method.Touch
 import android.util.AttributeSet
 import android.util.DisplayMetrics
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.FrameLayout
@@ -75,9 +77,10 @@ class HudContainer @JvmOverloads constructor(
     /* internal props */
     var mPlayer: Player? = null
     var mPlayerHandler: IPlayerHandler? = null
-    private var mGestureDelegate = GestureDelegate()
+    private lateinit var mGestureDelegate: GestureDelegate
 
     init {
+        initGesture()
         syncSettings()
         initWithListener()
     }
@@ -209,6 +212,19 @@ class HudContainer @JvmOverloads constructor(
 //        this.smoothSeekGesture = prefs.getBoolean("seek_gesture_smooth", false)
 
         mGestureDelegate.syncSettings(prefs, resources)
+    }
+
+    private fun initGesture() {
+        val dm = DisplayMetrics()
+        context.getSystemService<WindowManager>()!!.defaultDisplay.getMetrics(dm)
+        val yRange = dm.widthPixels.coerceAtMost(dm.heightPixels)
+        val xRange = dm.widthPixels.coerceAtLeast(dm.heightPixels)
+        val scaledTouchSlop = ViewConfiguration.get(context).scaledTouchSlop
+        mGestureDelegate =
+            GestureDelegate(
+                ScreenConfig(dm, xRange, yRange, resources.configuration.orientation),
+                TouchConfig(scaledTouchSlop)
+            )
     }
 
     private fun requirePlayer(): Player {
@@ -751,11 +767,19 @@ class HudContainer @JvmOverloads constructor(
             rightMargin = leftMargin
         }
 
-        // TODO: figure out if this should be replaced by WindowManager.getCurrentWindowMetrics()
+        // 手势处理
         val dm = DisplayMetrics()
-        context.getSystemService<WindowManager>()?.apply {
-            defaultDisplay.getRealMetrics(dm)
-        }
+        context.getSystemService<WindowManager>()!!.defaultDisplay.getMetrics(dm)
+        val sc = ScreenConfig(
+            dm,
+            dm.widthPixels.coerceAtLeast(dm.heightPixels),
+            dm.widthPixels.coerceAtMost(dm.heightPixels),
+            newConfig.orientation
+        )
+        mGestureDelegate.screenConfig = sc
+        val scaledTouchSlop = ViewConfiguration.get(context).scaledTouchSlop
+        val tc = TouchConfig(scaledTouchSlop)
+        mGestureDelegate.touchConfig = tc
     }
 
     override fun eventProperty(property: String) {

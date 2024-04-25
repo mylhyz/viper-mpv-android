@@ -6,11 +6,12 @@ import android.content.res.Resources
 import android.util.Log
 import android.view.MotionEvent
 import android.view.ViewConfiguration
+import io.viper.android.mpv.PlayerAdapter
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class GestureDelegate(
-    var screenConfig: ScreenConfig, var touchConfig: TouchConfig
+    var adapter: PlayerAdapter, var screenConfig: ScreenConfig, var touchConfig: TouchConfig
 ) {
     var numberOfTaps = 0
     var lastTapTimeMs: Long = 0
@@ -56,6 +57,7 @@ class GestureDelegate(
                 initTouchY = event.y
                 touchY = initTouchY
                 initAudioVolume()
+                initBrightness()
                 touchAction = TOUCH_NONE
                 // Seek
                 touchX = event.x
@@ -74,7 +76,6 @@ class GestureDelegate(
                             verticalTouchActive = true
                             touchY = event.y
                             touchX = event.x
-                            Log.i(TAG, "test active?")
                         }
                         return false
                     }
@@ -138,10 +139,18 @@ class GestureDelegate(
 
     private fun doVolumeTouch(yAxisChanged: Float) {
         if (touchAction != TOUCH_NONE && touchAction != TOUCH_VOLUME) return
-        // TODO 根据情况处理音频
+        val audioMax = adapter.audioMax
+        // 计算delta的值，注意加上负号是因为y轴的方向是从上到下，所以向下滑动y值是增大的
+        // 因此这里加上负号是为了规范delta，大于0表示音量+，小于0表示音量-
+        val delta = -(yAxisChanged / screenConfig.yRange * audioMax * 1.25f)
+        // 在之前获取到的当前音量的基础上进行计算
+        adapter.volume += delta
+        // 对计算的音量结果进行范围限制 0-100 之间
+        val vol = adapter.volume.toInt().coerceIn(0, audioMax)
+        if (delta != 0f) {
+            adapter.setAudioVolume(vol)
+        }
         touchAction = TOUCH_VOLUME
-
-        Log.i(TAG, "volume")
     }
 
     private fun doBrightnessTouch(yAxisChanged: Float) {
@@ -190,7 +199,11 @@ class GestureDelegate(
     }
 
     private fun initAudioVolume() {
-        // TODO
+        adapter.initAudioVolume()
+    }
+
+    private fun initBrightness() {
+        adapter.initBrightness()
     }
 
     companion object {

@@ -1,6 +1,7 @@
 package io.viper.android.mpv.hud
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
@@ -31,6 +32,7 @@ import androidx.preference.PreferenceManager
 import io.viper.android.mpv.IPlayerHandler
 import io.viper.android.mpv.NativeLibrary
 import io.viper.android.mpv.OpenUrlDialog
+import io.viper.android.mpv.PlayerAdapter
 import io.viper.android.mpv.convertDp
 import io.viper.android.mpv.core.Player
 import io.viper.android.mpv.dialog.DecimalPickerDialog
@@ -77,6 +79,7 @@ class HudContainer @JvmOverloads constructor(
     /* internal props */
     var mPlayer: Player? = null
     var mPlayerHandler: IPlayerHandler? = null
+    private lateinit var mPlayerAdapter: PlayerAdapter
     private lateinit var mGestureDelegate: GestureDelegate
 
     init {
@@ -215,16 +218,17 @@ class HudContainer @JvmOverloads constructor(
     }
 
     private fun initGesture() {
+        mPlayerAdapter = PlayerAdapter(context, (context as Activity).window)
         val dm = DisplayMetrics()
         context.getSystemService<WindowManager>()!!.defaultDisplay.getMetrics(dm)
         val yRange = dm.widthPixels.coerceAtMost(dm.heightPixels)
         val xRange = dm.widthPixels.coerceAtLeast(dm.heightPixels)
         val scaledTouchSlop = ViewConfiguration.get(context).scaledTouchSlop
-        mGestureDelegate =
-            GestureDelegate(
-                ScreenConfig(dm, xRange, yRange, resources.configuration.orientation),
-                TouchConfig(scaledTouchSlop)
-            )
+        mGestureDelegate = GestureDelegate(
+            mPlayerAdapter,
+            ScreenConfig(dm, xRange, yRange, resources.configuration.orientation),
+            TouchConfig(scaledTouchSlop)
+        )
     }
 
     private fun requirePlayer(): Player {
@@ -601,8 +605,7 @@ class HudContainer @JvmOverloads constructor(
     private var useAudioUI = false
 
     private fun updateStats() {
-        if (!statsFPS)
-            return
+        if (!statsFPS) return
         mBinding.statsTextView.text = getString(R.string.ui_fps, requirePlayer().estimatedVfFps)
     }
 
@@ -616,14 +619,12 @@ class HudContainer @JvmOverloads constructor(
 
     private fun updatePlaybackDuration(duration: Int) {
         mBinding.playbackDurationTxt.text = prettyTime(duration)
-        if (!userIsOperatingSeekbar)
-            mBinding.playbackSeekbar.max = duration
+        if (!userIsOperatingSeekbar) mBinding.playbackSeekbar.max = duration
     }
 
     fun updatePlaybackPos(position: Int) {
         mBinding.playbackPositionTxt.text = prettyTime(position)
-        if (!userIsOperatingSeekbar)
-            mBinding.playbackSeekbar.progress = position
+        if (!userIsOperatingSeekbar) mBinding.playbackSeekbar.progress = position
 
         updateDecoderButton()
         updateSpeedButton()

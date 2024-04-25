@@ -155,10 +155,12 @@ class GestureDelegate(
 
     private fun doBrightnessTouch(yAxisChanged: Float) {
         if (touchAction != TOUCH_NONE && touchAction != TOUCH_BRIGHTNESS) return
-        // TODO 跟进情况处理亮度
         touchAction = TOUCH_BRIGHTNESS
-
-        Log.i(TAG, "brightness")
+        // 计算亮度delta的值，注意加上负号是因为y轴的方向是从上到下，所以向下滑动y值是增大的
+        // 这里计算得到的delta是一个浮点数，含义是占纵向总高度的百分比 * 1.25倍
+        // Set delta : 1.25f is arbitrary for now, it possibly will change in the future
+        val delta = -yAxisChanged / screenConfig.yRange * 1.25f
+        adapter.setBrightness(delta)
     }
 
     private fun doVerticalTouchAction(yAxisChanged: Float) {

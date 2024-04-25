@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.Window
 import androidx.core.content.getSystemService
 import io.viper.android.mpv.core.Player
+import kotlin.math.roundToInt
 
 class PlayerAdapter(val context: Context, val window: Window) {
 
@@ -30,6 +31,7 @@ class PlayerAdapter(val context: Context, val window: Window) {
     fun initBrightness() {
         if (!isFistGetBrightness) return
         val lp = window.attributes
+        // 这里需要注意的是 screenBrightness 的值范围是 0-1
         val brightnessTemp = if (lp.screenBrightness != -1f)
             lp.screenBrightness
         else {
@@ -48,6 +50,22 @@ class PlayerAdapter(val context: Context, val window: Window) {
         }
 
         lp.screenBrightness = brightnessTemp
+        window.attributes = lp
+    }
+
+    fun setBrightness(delta: Float) {
+        val lp = window.attributes
+        // screenBrightness 的值范围是 0-1
+        var brightness = (lp.screenBrightness + delta).coerceIn(0.01f, 1f)
+        setWindowBrightness(brightness)
+        // TODO 控制界面上亮度进度条的显示
+        brightness = (brightness * 100).roundToInt().toFloat()
+    }
+
+    private fun setWindowBrightness(brightness: Float) {
+        val lp = window.attributes
+        lp.screenBrightness = brightness
+        // Set Brightness
         window.attributes = lp
     }
 

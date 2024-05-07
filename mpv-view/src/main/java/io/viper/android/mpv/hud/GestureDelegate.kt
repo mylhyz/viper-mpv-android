@@ -6,12 +6,16 @@ import android.content.res.Resources
 import android.util.Log
 import android.view.MotionEvent
 import android.view.ViewConfiguration
+import io.viper.android.mpv.OverlayAdapter
 import io.viper.android.mpv.PlayerAdapter
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class GestureDelegate(
-    var adapter: PlayerAdapter, var screenConfig: ScreenConfig, var touchConfig: TouchConfig
+    private var adapter: PlayerAdapter,
+    private var overlay: OverlayAdapter,
+    var screenConfig: ScreenConfig,
+    var touchConfig: TouchConfig
 ) {
     var numberOfTaps = 0
     var lastTapTimeMs: Long = 0

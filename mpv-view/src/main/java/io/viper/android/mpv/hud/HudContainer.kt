@@ -32,6 +32,7 @@ import androidx.preference.PreferenceManager
 import io.viper.android.mpv.IPlayerHandler
 import io.viper.android.mpv.NativeLibrary
 import io.viper.android.mpv.OpenUrlDialog
+import io.viper.android.mpv.OverlayAdapter
 import io.viper.android.mpv.PlayerAdapter
 import io.viper.android.mpv.convertDp
 import io.viper.android.mpv.core.Player
@@ -80,6 +81,7 @@ class HudContainer @JvmOverloads constructor(
     var mPlayer: Player? = null
     var mPlayerHandler: IPlayerHandler? = null
     private lateinit var mPlayerAdapter: PlayerAdapter
+    private lateinit var mOverlayAdapter: OverlayAdapter
     private lateinit var mGestureDelegate: GestureDelegate
 
     init {
@@ -218,6 +220,7 @@ class HudContainer @JvmOverloads constructor(
     }
 
     private fun initGesture() {
+        mOverlayAdapter = OverlayAdapter()
         mPlayerAdapter = PlayerAdapter(context, (context as Activity).window)
         val dm = DisplayMetrics()
         context.getSystemService<WindowManager>()!!.defaultDisplay.getMetrics(dm)
@@ -226,6 +229,7 @@ class HudContainer @JvmOverloads constructor(
         val scaledTouchSlop = ViewConfiguration.get(context).scaledTouchSlop
         mGestureDelegate = GestureDelegate(
             mPlayerAdapter,
+            mOverlayAdapter,
             ScreenConfig(dm, xRange, yRange, resources.configuration.orientation),
             TouchConfig(scaledTouchSlop)
         )
